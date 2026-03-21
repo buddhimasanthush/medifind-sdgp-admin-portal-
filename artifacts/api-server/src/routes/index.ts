@@ -7,6 +7,7 @@ import patientsRoutes from "./patients.js";
 import pharmaciesRoutes from "./pharmacies.js";
 import settingsRoutes from "./settings.js";
 import notificationsRoutes from "./notifications.js";
+import statsRoutes from "./stats.js";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use("/", patientsRoutes);
 router.use("/", pharmaciesRoutes);
 router.use("/", settingsRoutes);
 router.use("/", notificationsRoutes);
+router.use("/", statsRoutes);
 
 export default router;

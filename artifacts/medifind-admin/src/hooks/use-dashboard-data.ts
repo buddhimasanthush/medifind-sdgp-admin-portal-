@@ -19,6 +19,13 @@ export type RecentScan = {
   confidence: number;
 };
 
+export type DashboardStats = {
+  totalRevenue: number;
+  activePatients: number;
+  ocrSuccessRate: number;
+  revenueChart: { name: string; revenue: number }[];
+};
+
 export function useDashboardData() {
   const queryClient = useQueryClient();
 
@@ -42,12 +49,22 @@ export function useDashboardData() {
     },
   });
 
-  // Fetch orders for revenue calculation (optional, but requested "sales data")
+  // Fetch orders for revenue calculation
   const { data: orders = [] } = useQuery({
     queryKey: ["/api/orders"],
     queryFn: async () => {
       const res = await fetch("/api/orders");
       if (!res.ok) throw new Error("Failed to fetch orders");
+      return res.json();
+    },
+  });
+
+  // Fetch aggregate stats
+  const { data: stats, isLoading: isLoadingStats } = useQuery<DashboardStats>({
+    queryKey: ["/api/stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/stats");
+      if (!res.ok) throw new Error("Failed to fetch dashboard stats");
       return res.json();
     },
   });
@@ -89,7 +106,8 @@ export function useDashboardData() {
     approvePharmacy,
     rejectPharmacy,
     recentScans,
-    isLoading: isLoadingApprovals || isLoadingLogs,
-    orders
+    isLoading: isLoadingApprovals || isLoadingLogs || isLoadingStats,
+    orders,
+    stats
   };
 }

@@ -20,26 +20,14 @@ const revenueData = [
 ];
 
 export default function Dashboard() {
-  const { approvals, approvePharmacy, rejectPharmacy, recentScans, orders, isLoading } = useDashboardData();
+  const { approvals, approvePharmacy, rejectPharmacy, recentScans, stats, isLoading } = useDashboardData();
   const today = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date());
 
-  // Calculate real metrics from database data
-  const totalRevenue = (orders as any[]).reduce((acc: number, order: any) => acc + (order.total || 0), 0);
-  const activePatientsCount = new Set((orders as any[]).map((o: any) => o.patientName)).size; // Simple unique patient count for now
-  
-  // Group orders by month for the chart
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const currentMonth = new Date().getMonth();
-  
-  const processedRevenueData = revenueData.map((data, index) => {
-    if (index === currentMonth) {
-      const monthRevenue = (orders as any[])
-        .filter((o: any) => new Date(o.createdAt).getMonth() === index)
-        .reduce((acc: number, o: any) => acc + (o.total || 0), 0);
-      return { ...data, revenue: monthRevenue };
-    }
-    return data;
-  });
+  // Use real metrics from backend stats
+  const totalRevenue = stats?.totalRevenue || 0;
+  const activePatientsCount = stats?.activePatients || 0;
+  const ocrSuccessRate = stats?.ocrSuccessRate !== undefined ? `${stats.ocrSuccessRate.toFixed(1)}%` : "0.0%";
+  const processedRevenueData = stats?.revenueChart || [];
 
   return (
     <div className="pb-8 animate-in fade-in duration-500">
@@ -112,7 +100,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div>
-            <span className="text-3xl text-success font-mono-data font-bold drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]">98.2%</span>
+            <span className="text-3xl text-success font-mono-data font-bold drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]">{ocrSuccessRate}</span>
             <div className="mt-2">
               <Badge variant="outline" className="bg-success/10 text-success border-success/20 font-sans">
                 Above Target 94%
