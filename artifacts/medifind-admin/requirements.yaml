@@ -1,0 +1,12 @@
+packages:
+  "date-fns": "For formatting dates nicely"
+  "react-hook-form": "For robust form state management"
+  "@hookform/resolvers": "For Zod schema validation with forms"
+  "zod": "For frontend form schemas matching the backend"
+
+images: []
+
+notes:
+  - "Using existing generated hooks from @workspace/api-client-react"
+  - "Routing configured with wouter"
+  - "Styling uses medical blue #0796DE theme"
