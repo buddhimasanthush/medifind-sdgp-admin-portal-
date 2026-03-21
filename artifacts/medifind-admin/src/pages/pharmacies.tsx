@@ -31,12 +31,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function PharmaciesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 300);
   const [statusFilter, setStatusFilter] = useState<ListPharmaciesStatus | "all">("all");
+  const [viewingPharmacy, setViewingPharmacy] = useState<any | null>(null);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -240,7 +248,12 @@ export default function PharmaciesPage() {
                           </Button>
                         </div>
                       ) : (
-                        <Button size="sm" variant="ghost" className="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => setViewingPharmacy(pharmacy)}
+                        >
                           View Details
                         </Button>
                       )}
@@ -252,6 +265,47 @@ export default function PharmaciesPage() {
           </Table>
         </div>
       </Card>
+
+      <Dialog open={!!viewingPharmacy} onOpenChange={(open) => !open && setViewingPharmacy(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Pharmacy Details</DialogTitle>
+            <DialogDescription>
+              Registration and contact information.
+            </DialogDescription>
+          </DialogHeader>
+          {viewingPharmacy && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Name</p>
+                <p className="text-base font-semibold">{viewingPharmacy.name}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Registration No.</p>
+                  <p className="font-mono text-sm">{viewingPharmacy.registrationNumber}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Status</p>
+                  <Badge variant="outline" className="capitalize">{viewingPharmacy.status}</Badge>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Email</p>
+                  <p className="text-sm">{viewingPharmacy.contactEmail}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Phone</p>
+                  <p className="text-sm">{viewingPharmacy.phone}</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Location</p>
+                <p className="text-sm">{viewingPharmacy.location}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
