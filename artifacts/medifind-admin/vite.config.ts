@@ -6,26 +6,12 @@ import path from "path";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const rawPort = env.PORT || process.env.PORT;
-
-  if (!rawPort) {
-    throw new Error(
-      "PORT environment variable is required but was not provided.",
-    );
-  }
-
+  const rawPort = env.PORT || process.env.PORT || "3000";
   const port = Number(rawPort);
+  const basePath = env.BASE_PATH || process.env.BASE_PATH || "/";
 
   if (Number.isNaN(port) || port <= 0) {
     throw new Error(`Invalid PORT value: "${rawPort}"`);
-  }
-
-  const basePath = env.BASE_PATH || process.env.BASE_PATH;
-
-  if (!basePath) {
-    throw new Error(
-      "BASE_PATH environment variable is required but was not provided.",
-    );
   }
 
   return {
