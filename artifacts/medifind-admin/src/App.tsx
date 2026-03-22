@@ -15,7 +15,7 @@ import SettingsPage from "@/pages/settings";
 import LoginPage from "@/pages/login";
 import ProfilePage from "@/pages/profile";
 import NotFound from "@/pages/not-found";
-import { customFetch } from "../../lib/api-client-react/src/custom-fetch";
+import { customFetch } from "../../../lib/api-client-react/src/custom-fetch";
 
 const queryClient = new QueryClient({
   defaultOptions: {
