@@ -11,18 +11,33 @@ const __dirname = typeof import.meta.url !== 'undefined'
 const defaultDbPath = path.resolve(__dirname, "../sqlite.db");
 const dbPath = process.env.DATABASE_URL || defaultDbPath;
 
-// Support for Turso (Cloud SQLite) or Local SQLite
+// Support for Turso (Cloud SQLite) or Local SQLite or Supabase (Postgres)
 const tursoUrl = process.env.TURSO_CONNECTION_URL;
 const tursoToken = process.env.TURSO_AUTH_TOKEN;
+const supabaseUrl = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
 
-// Local path must be prefixed with file:
-const connectionUrl = tursoUrl || `file:${dbPath}`;
+let db: any;
 
-const client = createClient({
-  url: connectionUrl,
-  authToken: tursoToken,
-});
+if (supabaseUrl && (supabaseUrl.startsWith("postgres") || supabaseUrl.includes("supabase"))) {
+  const { drizzle: drizzlePg } = await import("drizzle-orm/node-postgres");
+  const pg = await import("pg");
+  const pool = new pg.default.Pool({
+    connectionString: supabaseUrl,
+    ssl: { rejectUnauthorized: false }
+  });
+  db = drizzlePg(pool, { schema });
+} else {
+  // Local path must be prefixed with file:
+  const connectionUrl = tursoUrl || `file:${dbPath}`;
 
-export const db = drizzle(client, { schema });
+  const client = createClient({
+    url: connectionUrl,
+    authToken: tursoToken,
+  });
+
+  db = drizzle(client, { schema });
+}
+
+export { db };
 export * from "./schema";
 export * from "drizzle-orm";

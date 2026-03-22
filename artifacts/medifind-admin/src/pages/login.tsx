@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { customFetch } from "../../../../lib/api-client-react/src/custom-fetch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,20 +21,10 @@ export default function LoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/login", {
+      return await customFetch("/api/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
-      if (!response.ok) {
-        let errorMessage = "Login failed";
-        try {
-          const error = await response.json();
-          errorMessage = error.error || errorMessage;
-        } catch (e) {}
-        throw new Error(errorMessage);
-      }
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/me"] });
@@ -47,25 +38,22 @@ export default function LoginPage() {
 
   const registerMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/register", {
+      return await customFetch("/api/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password, employeeId }),
       });
-      if (!response.ok) {
-        let errorMessage = "Registration failed";
-        try {
-          const error = await response.json();
-          errorMessage = error.error || errorMessage;
-        } catch (e) {}
-        throw new Error(errorMessage);
-      }
-      return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/me"] });
-      toast({ title: "Account created!", description: "Successfully registered and logged in." });
-      setLocation("/");
+    onSuccess: (data: any) => {
+      if (data.status === "pending") {
+        toast({ 
+          title: "Account pending", 
+          description: "Your account is created but waiting for admin approval.",
+        });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+        toast({ title: "Account created!", description: "Successfully registered and logged in." });
+        setLocation("/");
+      }
     },
     onError: (error: Error) => {
       toast({ title: "Registration failed", description: error.message, variant: "destructive" });
