@@ -64,7 +64,7 @@ async function buildAll() {
       "process.env.NODE_ENV": '"production"',
     },
     minify: true,
-     external: [...externals],
+     external: [...externals, "@libsql/*", "pg-native", "better-sqlite3"],
     logLevel: "info",
     banner: {
       js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
