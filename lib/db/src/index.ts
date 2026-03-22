@@ -4,7 +4,10 @@ import * as schema from "./schema";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = typeof import.meta.url !== 'undefined' 
+  ? path.dirname(fileURLToPath(import.meta.url)) 
+  : process.cwd();
+
 const defaultDbPath = path.resolve(__dirname, "../sqlite.db");
 const dbPath = process.env.DATABASE_URL || defaultDbPath;
 
