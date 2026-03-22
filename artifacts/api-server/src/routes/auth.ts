@@ -67,10 +67,11 @@ router.post("/login", async (req, res) => {
     return;
   }
 
+  const isProduction = process.env.NODE_ENV === "production";
   res.cookie("admin_id", admin.id.toString(), { 
     httpOnly: true, 
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     maxAge: 3600000 // 1 hour
   });
 

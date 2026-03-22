@@ -304,7 +304,7 @@ export async function customFetch<T = unknown>(
     ? `${baseUrl}${input}` 
     : input;
 
-  const response = await fetch(finalInput, { ...init, method, headers });
+  const response = await fetch(finalInput, { credentials: "include", ...init, method, headers });
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
