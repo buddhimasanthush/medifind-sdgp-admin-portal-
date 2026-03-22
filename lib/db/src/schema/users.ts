@@ -1,13 +1,25 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text as sqliteText, integer as sqliteInteger } from "drizzle-orm/sqlite-core";
+import { pgTable, text as pgText, integer as pgInteger, timestamp as pgTimestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const usersTable = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  username: text("username").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().defaultNow(),
-});
+const isPostgres = () => 
+  process.env.SUPABASE_DB_URL || 
+  (process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith("postgres") || process.env.DATABASE_URL.includes("supabase")));
+
+export const usersTable = isPostgres()
+  ? pgTable("users", {
+      id: pgInteger("id").primaryKey().generatedAlwaysAsIdentity(),
+      username: pgText("username").notNull().unique(),
+      passwordHash: pgText("password_hash").notNull(),
+      createdAt: pgTimestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    })
+  : sqliteTable("users", {
+      id: sqliteInteger("id").primaryKey({ autoIncrement: true }),
+      username: sqliteText("username").notNull().unique(),
+      passwordHash: sqliteText("password_hash").notNull(),
+      createdAt: sqliteInteger("created_at", { mode: "timestamp" }).notNull().defaultNow(),
+    });
 
 export const insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true });
 export const selectUserSchema = createSelectSchema(usersTable);

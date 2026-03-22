@@ -12,17 +12,17 @@
   "dependencies": {
     "@workspace/db": "workspace:*",
     "@workspace/api-zod": "workspace:*",
-    "@libsql/client": "^0.17.0",
-    "drizzle-orm": "catalog:",
     "express": "^5",
     "cookie-parser": "^1.4.7",
-    "cors": "^2"
+    "cors": "^2",
+    "pg": "^8.13.3"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/express": "^5.0.6",
     "@types/cors": "^2.8.19",
     "@types/cookie-parser": "^1.4.10",
+    "@types/pg": "^8.11.11",
     "esbuild": "^0.27.3",
     "tsx": "catalog:"
   }

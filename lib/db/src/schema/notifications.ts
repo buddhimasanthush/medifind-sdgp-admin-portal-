@@ -1,15 +1,29 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text as sqliteText, integer as sqliteInteger } from "drizzle-orm/sqlite-core";
+import { pgTable, text as pgText, integer as pgInteger, timestamp as pgTimestamp, boolean as pgBoolean } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const notificationsTable = sqliteTable("notifications", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  type: text("type").notNull(), // e.g., 'new_employee_signup'
-  message: text("message").notNull(),
-  read: integer("read", { mode: "boolean" }).notNull().default(false),
-  metadata: text("metadata"), // JSON string for extra data
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().defaultNow(),
-});
+const isPostgres = () => 
+  process.env.SUPABASE_DB_URL || 
+  (process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith("postgres") || process.env.DATABASE_URL.includes("supabase")));
+
+export const notificationsTable = isPostgres()
+  ? pgTable("notifications", {
+      id: pgInteger("id").primaryKey().generatedAlwaysAsIdentity(),
+      type: pgText("type").notNull(), 
+      message: pgText("message").notNull(),
+      read: pgBoolean("read").notNull().default(false),
+      metadata: pgText("metadata"), 
+      createdAt: pgTimestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    })
+  : sqliteTable("notifications", {
+      id: sqliteInteger("id").primaryKey({ autoIncrement: true }),
+      type: sqliteText("type").notNull(), 
+      message: sqliteText("message").notNull(),
+      read: sqliteInteger("read", { mode: "boolean" }).notNull().default(false),
+      metadata: sqliteText("metadata"), 
+      createdAt: sqliteInteger("created_at", { mode: "timestamp" }).notNull().defaultNow(),
+    });
 
 export const insertNotificationSchema = createInsertSchema(notificationsTable).omit({ id: true, createdAt: true });
 export const selectNotificationSchema = createSelectSchema(notificationsTable);

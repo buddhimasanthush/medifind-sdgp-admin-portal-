@@ -64,7 +64,7 @@ async function buildAll() {
       "process.env.NODE_ENV": '"production"',
     },
     minify: true,
-    external: [...externals, "@libsql/client", "@libsql/*"],
+     external: [...externals, "@libsql/client", "@libsql/*", "pg"],
     logLevel: "info",
     banner: {
       js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
