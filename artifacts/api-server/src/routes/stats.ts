@@ -21,15 +21,22 @@ router.get("/stats", async (req, res) => {
     const successScans = Number(successScansRes?.value || 0);
     const ocrSuccessRate = totalScans > 0 ? (successScans / totalScans) * 100 : 0;
 
+    const isPostgres = () => 
+      (process.env.SUPABASE_DB_URL && process.env.SUPABASE_DB_URL.trim() !== "") || 
+      (process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith("postgres") || process.env.DATABASE_URL.includes("supabase")));
+
     // 4. Revenue for Chart (Last 12 months)
-    // SQLite: strftime('%m', datetime(created_at, 'unixepoch'))
+    const monthSql = isPostgres() 
+      ? sql<string>`to_char(${ordersTable.createdAt}, 'MM')`
+      : sql<string>`strftime('%m', datetime(${ordersTable.createdAt}, 'unixepoch'))`;
+
     const chartRes = await db.select({
-      month: sql<string>`strftime('%m', datetime(${ordersTable.createdAt}, 'unixepoch'))`,
+      month: monthSql,
       revenue: sum(ordersTable.total)
     })
     .from(ordersTable)
-    .groupBy(sql`strftime('%m', datetime(${ordersTable.createdAt}, 'unixepoch'))`)
-    .orderBy(sql`strftime('%m', datetime(${ordersTable.createdAt}, 'unixepoch'))`);
+    .groupBy(monthSql)
+    .orderBy(monthSql);
 
     // Map month numbers to names
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
