@@ -3,13 +3,13 @@
   "services": {
     "api-server": {
       "name": "api-server",
-      "source": "artifacts/api-server",
+      "source": ".",
       "watch": true,
       "build": {
         "builder": "NIXPACKS"
       },
       "deploy": {
-        "startCommand": "pnpm start",
+        "startCommand": "pnpm --filter @workspace/db push && pnpm --filter @workspace/api-server start",
         "restartPolicyType": "ON_FAILURE",
         "healthcheckPath": "/health"
       }
