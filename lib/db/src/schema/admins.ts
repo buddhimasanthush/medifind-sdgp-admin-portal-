@@ -3,9 +3,11 @@ import { pgTable, text as pgText, integer as pgInteger, timestamp as pgTimestamp
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-const isPostgres = process.env.SUPABASE_DB_URL || (process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith("postgres") || process.env.DATABASE_URL.includes("supabase")));
+const isPostgres = () => 
+  process.env.SUPABASE_DB_URL || 
+  (process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith("postgres") || process.env.DATABASE_URL.includes("supabase")));
 
-export const adminsTable = isPostgres 
+export const adminsTable = isPostgres()
   ? pgTable("admins", {
       id: pgInteger("id").primaryKey().generatedAlwaysAsIdentity(),
       username: pgText("username").notNull().unique(),
@@ -28,4 +30,5 @@ export const selectAdminSchema = createSelectSchema(adminsTable);
 
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
 export type Admin = z.infer<typeof selectAdminSchema>;
+
 
