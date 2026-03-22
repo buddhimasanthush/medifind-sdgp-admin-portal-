@@ -1,5 +1,4 @@
-import { drizzle } from "drizzle-orm/libsql";
-import { createClient } from "@libsql/client";
+import { drizzle as drizzleLibsql } from "drizzle-orm/libsql";
 import * as schema from "./schema";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,6 +28,7 @@ if (supabaseUrl && (supabaseUrl.startsWith("postgres") || supabaseUrl.includes("
   db = drizzlePg(pool, { schema });
 } else {
   console.log("Database: Initializing SQLite connection...");
+  const { createClient } = await import("@libsql/client");
   // Local path must be prefixed with file:
   const connectionUrl = tursoUrl || `file:${dbPath}`;
 
@@ -37,7 +37,7 @@ if (supabaseUrl && (supabaseUrl.startsWith("postgres") || supabaseUrl.includes("
     authToken: tursoToken,
   });
 
-  db = drizzle(client, { schema });
+  db = drizzleLibsql(client, { schema });
 }
 
 export { db };
