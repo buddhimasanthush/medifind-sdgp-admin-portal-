@@ -64,9 +64,10 @@ async function buildAll() {
       "process.env.NODE_ENV": '"production"',
     },
     minify: true,
-    external: externals,
+    external: [...externals, "@libsql/client", "@libsql/*"],
     logLevel: "info",
   });
+
 }
 
 buildAll().catch((err) => {

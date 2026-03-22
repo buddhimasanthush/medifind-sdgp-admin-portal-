@@ -78,6 +78,9 @@ importers:
 
   artifacts/api-server:
     dependencies:
+      '@libsql/client':
+        specifier: ^0.17.0
+        version: 0.17.0
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
