@@ -15,6 +15,7 @@ import SettingsPage from "@/pages/settings";
 import LoginPage from "@/pages/login";
 import ProfilePage from "@/pages/profile";
 import NotFound from "@/pages/not-found";
+import { customFetch } from "../../lib/api-client-react/src/custom-fetch";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,10 +31,12 @@ function Router() {
   const { data: user, isLoading } = useQuery({
     queryKey: ["/api/me"],
     queryFn: async () => {
-      const res = await fetch("/api/me");
-      if (res.status === 401) return null;
-      if (!res.ok) throw new Error("Failed to fetch user");
-      return res.json();
+      try {
+        return await customFetch("/api/me");
+      } catch (err: any) {
+        if (err.status === 401) return null;
+        throw err;
+      }
     },
   });
 

@@ -299,7 +299,12 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  const baseUrl = (import.meta as any).env?.VITE_API_URL?.replace(/\/$/, "") || "";
+  const finalInput = typeof input === "string" && input.startsWith("/") 
+    ? `${baseUrl}${input}` 
+    : input;
+
+  const response = await fetch(finalInput, { ...init, method, headers });
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
