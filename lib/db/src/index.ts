@@ -8,19 +8,26 @@ const __dirname = typeof import.meta.url !== 'undefined'
   : process.cwd();
 
 const defaultDbPath = path.resolve(__dirname, "../sqlite.db");
+const isPostgres = () =>
+  (process.env.SUPABASE_DB_URL && process.env.SUPABASE_DB_URL.trim() !== "") ||
+  (process.env.DATABASE_URL && (
+    process.env.DATABASE_URL.startsWith("postgres") ||
+    process.env.DATABASE_URL.includes("supabase")
+  ));
+
 const dbPath = process.env.DATABASE_URL || defaultDbPath;
 
-// Support for Turso (Cloud SQLite) or Local SQLite or Supabase (Postgres)
-const tursoUrl = process.env.TURSO_CONNECTION_URL;
-const tursoToken = process.env.TURSO_AUTH_TOKEN;
-const supabaseUrl = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
+console.log("DATABASE_URL present:", !!process.env.DATABASE_URL);
+console.log("SUPABASE_DB_URL present:", !!process.env.SUPABASE_DB_URL);
+console.log("isPostgres result:", !!isPostgres());
 
 let db: any;
 
-if (supabaseUrl && (supabaseUrl.startsWith("postgres") || supabaseUrl.includes("supabase"))) {
+if (isPostgres()) {
   console.log("Database: Initializing PostgreSQL (Supabase) connection...");
   const { drizzle: drizzlePg } = await import("drizzle-orm/node-postgres");
   const pg = await import("pg");
+  const supabaseUrl = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
   const pool = new pg.default.Pool({
     connectionString: supabaseUrl,
     ssl: { rejectUnauthorized: false }
@@ -28,8 +35,10 @@ if (supabaseUrl && (supabaseUrl.startsWith("postgres") || supabaseUrl.includes("
   db = drizzlePg(pool, { schema });
 } else {
   console.log("Database: Initializing SQLite connection...");
+  const { drizzle: drizzleLibsql } = await import("drizzle-orm/libsql");
   const { createClient } = await import("@libsql/client");
-  // Local path must be prefixed with file:
+  const tursoUrl = process.env.TURSO_CONNECTION_URL;
+  const tursoToken = process.env.TURSO_AUTH_TOKEN;
   const connectionUrl = tursoUrl || `file:${dbPath}`;
 
   const client = createClient({
