@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { User, Mail, Shield, BadgeCheck, Clock, IdCard } from "lucide-react";
+import { User, Mail, Shield, BadgeCheck, Clock, IdCard, Bell, HelpCircle, UserCog, ChevronRight } from "lucide-react";
+import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -98,6 +99,57 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
+
+      <div className="flex flex-col gap-4 max-w-6xl">
+        <h3 className="text-xl font-display font-bold text-foreground">Account Controls</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ProfileLink 
+            href="/profile/edit" 
+            icon={<UserCog className="w-5 h-5" />} 
+            title="Edit Identity" 
+            sub="Change display name and id" 
+          />
+          <ProfileLink 
+            href="/privacy-security" 
+            icon={<Shield className="w-5 h-5" />} 
+            title="Privacy & Security" 
+            sub="Manage 2FA and sessions" 
+          />
+          <ProfileLink 
+            href="/notifications" 
+            icon={<Bell className="w-5 h-5" />} 
+            title="Notification Alerts" 
+            sub="Config system updates" 
+          />
+          <ProfileLink 
+            href="/help-support" 
+            icon={<HelpCircle className="w-5 h-5" />} 
+            title="Support & FAQ" 
+            sub="Get help with the portal" 
+          />
+        </div>
+      </div>
     </div>
+  );
+}
+
+function ProfileLink({ href, icon, title, sub }: any) {
+  return (
+    <Link href={href}>
+      <Card className="border-border/50 shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer group">
+        <CardContent className="p-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+              {icon}
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-foreground leading-none mb-1">{title}</h4>
+              <p className="text-xs text-muted-foreground">{sub}</p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground/30 group-hover:text-primary transition-colors" />
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

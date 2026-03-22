@@ -15,6 +15,10 @@ import SettingsPage from "@/pages/settings";
 import LoginPage from "@/pages/login";
 import ProfilePage from "@/pages/profile";
 import NotFound from "@/pages/not-found";
+import PrivacySecurityPage from "@/pages/privacy-security";
+import NotificationsPage from "@/pages/notifications";
+import HelpSupportPage from "@/pages/help-support";
+import EditProfilePage from "@/pages/edit-profile";
 import { customFetch } from "../../../lib/api-client-react/src/custom-fetch";
 
 const queryClient = new QueryClient({
@@ -68,7 +72,11 @@ function Router() {
             <Route path="/logs" component={OcrLogsPage} />
             <Route path="/orders" component={OrdersPage} />
             <Route path="/settings" component={SettingsPage} />
+            <Route path="/privacy-security" component={PrivacySecurityPage} />
+            <Route path="/notifications" component={NotificationsPage} />
+            <Route path="/help-support" component={HelpSupportPage} />
             <Route path="/profile" component={ProfilePage} />
+            <Route path="/profile/edit" component={EditProfilePage} />
             <Route component={NotFound} />
           </Switch>
         </AppLayout>
