@@ -56,26 +56,45 @@ router.post("/login", async (req, res) => {
     return;
   }
 
-  const [admin] = await db.select().from(adminsTable).where(eq(adminsTable.username, username));
-  if (!admin || !(await verifyPassword(password, admin.passwordHash))) {
-    res.status(401).json({ error: "Invalid username or password" });
-    return;
+  try {
+    const [admin] = await db.select().from(adminsTable).where(eq(adminsTable.username, username));
+    
+    if (!admin) {
+      console.log(`Login attempt failed: User "${username}" not found.`);
+      res.status(401).json({ error: "Invalid username or password" });
+      return;
+    }
+
+    if (!admin.passwordHash || !admin.passwordHash.includes(":")) {
+      console.error(`Login error: Invalid password hash format for user "${username}". Expected salt:key.`);
+      res.status(500).json({ error: "Account configuration error. Please contact support." });
+      return;
+    }
+
+    if (!(await verifyPassword(password, admin.passwordHash))) {
+      console.log(`Login attempt failed: Incorrect password for user "${username}".`);
+      res.status(401).json({ error: "Invalid username or password" });
+      return;
+    }
+
+    if (admin.status !== "approved") {
+      res.status(403).json({ error: `Account status is ${admin.status}. Please wait for admin approval.` });
+      return;
+    }
+
+    const isProduction = process.env.NODE_ENV === "production";
+    res.cookie("admin_id", admin.id.toString(), { 
+      httpOnly: true, 
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 3600000 // 1 hour
+    });
+
+    res.json({ id: admin.id, username: admin.username, employeeId: admin.employeeId, status: admin.status });
+  } catch (err: any) {
+    console.error("Login route error:", err);
+    res.status(500).json({ error: err.message || "Internal server error" });
   }
-
-  if (admin.status !== "approved") {
-    res.status(403).json({ error: `Account status is ${admin.status}. Please wait for admin approval.` });
-    return;
-  }
-
-  const isProduction = process.env.NODE_ENV === "production";
-  res.cookie("admin_id", admin.id.toString(), { 
-    httpOnly: true, 
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
-    maxAge: 3600000 // 1 hour
-  });
-
-  res.json({ id: admin.id, username: admin.username, employeeId: admin.employeeId, status: admin.status });
 });
 
 router.post("/logout", (req, res) => {
