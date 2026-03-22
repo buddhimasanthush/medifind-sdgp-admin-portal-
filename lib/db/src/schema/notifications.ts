@@ -25,7 +25,7 @@ export const notificationsTable = isPostgres()
       createdAt: sqliteInteger("created_at", { mode: "timestamp" }).notNull().defaultNow(),
     });
 
-export const insertNotificationSchema = createInsertSchema(notificationsTable).omit({ id: true, createdAt: true });
+export const insertNotificationSchema = createInsertSchema(notificationsTable).omit({ createdAt: true });
 export const selectNotificationSchema = createSelectSchema(notificationsTable);
 
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;

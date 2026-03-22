@@ -39,6 +39,6 @@ export const patientsTable = isPostgres()
       updatedAt: sqliteInteger("updated_at", { mode: "timestamp" }).notNull().defaultNow().$onUpdate(() => new Date()),
     });
 
-export const insertPatientSchema = createInsertSchema(patientsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertPatientSchema = createInsertSchema(patientsTable).omit({ createdAt: true, updatedAt: true });
 export type InsertPatient = z.infer<typeof insertPatientSchema>;
 export type Patient = typeof patientsTable.$inferSelect;

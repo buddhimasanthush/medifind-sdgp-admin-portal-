@@ -29,6 +29,6 @@ export const settingsTable = isPostgres()
       updatedAt: sqliteInteger("updated_at", { mode: "timestamp" }).notNull().defaultNow().$onUpdate(() => new Date()),
     });
 
-export const insertSettingsSchema = createInsertSchema(settingsTable).omit({ id: true, updatedAt: true });
+export const insertSettingsSchema = createInsertSchema(settingsTable).omit({ updatedAt: true });
 export type InsertSettings = z.infer<typeof insertSettingsSchema>;
 export type Settings = typeof settingsTable.$inferSelect;

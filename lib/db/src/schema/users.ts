@@ -21,7 +21,7 @@ export const usersTable = isPostgres()
       createdAt: sqliteInteger("created_at", { mode: "timestamp" }).notNull().defaultNow(),
     });
 
-export const insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true });
+export const insertUserSchema = createInsertSchema(usersTable).omit({ createdAt: true });
 export const selectUserSchema = createSelectSchema(usersTable);
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

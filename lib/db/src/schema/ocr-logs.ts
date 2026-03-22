@@ -33,6 +33,6 @@ export const ocrLogsTable = isPostgres()
       createdAt: sqliteInteger("created_at", { mode: "timestamp" }).notNull().defaultNow(),
     });
 
-export const insertOcrLogSchema = createInsertSchema(ocrLogsTable).omit({ id: true, createdAt: true });
+export const insertOcrLogSchema = createInsertSchema(ocrLogsTable).omit({ createdAt: true });
 export type InsertOcrLog = z.infer<typeof insertOcrLogSchema>;
 export type OcrLog = typeof ocrLogsTable.$inferSelect;
