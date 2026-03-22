@@ -19,6 +19,7 @@ const supabaseUrl = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
 let db: any;
 
 if (supabaseUrl && (supabaseUrl.startsWith("postgres") || supabaseUrl.includes("supabase"))) {
+  console.log("Database: Initializing PostgreSQL (Supabase) connection...");
   const { drizzle: drizzlePg } = await import("drizzle-orm/node-postgres");
   const pg = await import("pg");
   const pool = new pg.default.Pool({
@@ -27,6 +28,7 @@ if (supabaseUrl && (supabaseUrl.startsWith("postgres") || supabaseUrl.includes("
   });
   db = drizzlePg(pool, { schema });
 } else {
+  console.log("Database: Initializing SQLite connection...");
   // Local path must be prefixed with file:
   const connectionUrl = tursoUrl || `file:${dbPath}`;
 
