@@ -1,58 +1,137 @@
 import { Router, type IRouter } from "express";
-import { db, adminsTable, notificationsTable, eq, and } from "@workspace/db";
-import { hashPassword, verifyPassword } from "../lib/hash.js";
+import { db, adminsTable, notificationsTable, eq } from "@workspace/db";
+import crypto from "crypto";
+import { sendOTPEmail } from "../lib/mailer";
 
 const router: IRouter = Router();
 
-router.post("/register", async (req, res) => {
-  const { username, password, employeeId } = req.body;
-  if (!username || !password || !employeeId) {
-    res.status(400).json({ error: "Username, password and Employee ID are required" });
+// Generate a random 6-digit OTP
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/**
+ * --- REGISTER FLOW ---
+ * Step 1: Request OTP for new account
+ */
+router.post("/register/request-otp", async (req, res) => {
+  const { username, employeeId } = req.body;
+  if (!username || !employeeId) {
+    res.status(400).json({ error: "Email (username) and Employee ID are required" });
     return;
   }
 
   try {
-    const passwordHash = await hashPassword(password);
-    
-    // Check if this is the first admin (optional bootstrap logic)
-    // For simplicity, following the user request for all new signups to be pending.
-    
-    const [admin] = await db.insert(adminsTable).values({
-      username,
-      passwordHash,
-      employeeId,
-      status: "pending", // Explicitly set to pending
-    }).returning();
-    
-    // Create notification for other admins
-    await db.insert(notificationsTable).values({
-      type: "new_employee_signup",
-      message: `New employee signup: ${username} (ID: ${employeeId})`,
-      metadata: JSON.stringify({ adminId: admin.id, username, employeeId }),
-    });
-    
-    // Do NOT set cookie upon registration if pending
-    res.status(201).json({ 
-      id: admin.id, 
-      username: admin.username, 
-      employeeId: admin.employeeId,
-      status: admin.status,
-      message: "Signup successful. Waiting for admin approval."
-    });
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+    // Check if user already exists
+    const [existing] = await db.select().from(adminsTable).where(eq(adminsTable.username, username));
+    if (existing) {
+      if (existing.status !== "unverified") {
+        res.status(400).json({ error: "User already exists." });
+        return;
+      }
+      // Update OTP for existing unverified user
+      await db.update(adminsTable)
+        .set({ otp, otpExpiresAt: expiresAt })
+        .where(eq(adminsTable.id, existing.id));
+    } else {
+      // Create new unverified user
+      await db.insert(adminsTable).values({
+        username,
+        employeeId,
+        status: "unverified",
+        otp,
+        otpExpiresAt: expiresAt,
+      });
+    }
+
+    // console.log(`\n\n===============================\n[MOCK EMAIL - REGISTRATION]\nTo: ${username}\nYour Medifind Registration OTP is: ${otp}\n===============================\n\n`);
+    // sendOTPEmail already logs successes or throws detailed errors
+    await sendOTPEmail(username, otp, "registration");
+
+    res.json({ message: "OTP sent successfully" });
   } catch (error: any) {
     if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.message.includes('UNIQUE constraint failed')) {
-      res.status(400).json({ error: "Username or Employee ID already exists" });
+      res.status(400).json({ error: "Employee ID already exists" });
     } else {
-      console.error("Register error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      console.error('❌ SMTP send error (registration):', {
+        message: error.message,
+        code: error.code,
+        response: error.response,
+        stack: error.stack,
+      });
+      res.status(500).json({ 
+        error: "Failed to send registration OTP", 
+        details: error.message 
+      });
     }
   }
 });
 
-router.post("/login", async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    res.status(400).json({ error: "Username and password are required" });
+/**
+ * Step 2: Verify OTP for new account
+ */
+router.post("/register/verify-otp", async (req, res) => {
+  const { username, otp } = req.body;
+  
+  if (!username || !otp) {
+    res.status(400).json({ error: "Email and OTP are required" });
+    return;
+  }
+
+  try {
+    const [admin] = await db.select().from(adminsTable).where(eq(adminsTable.username, username));
+    if (!admin) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    if (admin.otp !== otp) {
+      res.status(401).json({ error: "Invalid OTP" });
+      return;
+    }
+
+    if (!admin.otpExpiresAt || new Date(admin.otpExpiresAt).getTime() < Date.now()) {
+      res.status(401).json({ error: "OTP expired" });
+      return;
+    }
+
+    // Set to pending approval
+    const [updatedAdmin] = await db.update(adminsTable)
+      .set({ status: "pending", otp: null, otpExpiresAt: null })
+      .where(eq(adminsTable.id, admin.id))
+      .returning();
+
+    // Create notification for other admins
+    await db.insert(notificationsTable).values({
+      type: "new_employee_signup",
+      message: `New employee signup: ${username} (ID: ${updatedAdmin.employeeId})`,
+      metadata: JSON.stringify({ adminId: updatedAdmin.id, username, employeeId: updatedAdmin.employeeId }),
+    });
+
+    res.json({ 
+      id: updatedAdmin.id, 
+      username: updatedAdmin.username, 
+      status: updatedAdmin.status,
+      message: "Email verified. Waiting for admin approval." 
+    });
+  } catch (err: any) {
+    console.error("Register verify error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+/**
+ * --- LOGIN FLOW ---
+ * Step 1: Request OTP for existing approved account
+ */
+router.post("/login/request-otp", async (req, res) => {
+  const { username } = req.body;
+  if (!username) {
+    res.status(400).json({ error: "Email is required" });
     return;
   }
 
@@ -60,27 +139,78 @@ router.post("/login", async (req, res) => {
     const [admin] = await db.select().from(adminsTable).where(eq(adminsTable.username, username));
     
     if (!admin) {
-      console.log(`Login attempt failed: User "${username}" not found.`);
-      res.status(401).json({ error: "Invalid username or password" });
-      return;
-    }
-
-    if (!admin.passwordHash || !admin.passwordHash.includes(":")) {
-      console.error(`Login error: Invalid password hash format for user "${username}". Expected salt:key.`);
-      res.status(500).json({ error: "Account configuration error. Please contact support." });
-      return;
-    }
-
-    if (!(await verifyPassword(password, admin.passwordHash))) {
-      console.log(`Login attempt failed: Incorrect password for user "${username}".`);
-      res.status(401).json({ error: "Invalid username or password" });
+      // Don't leak whether the user exists for security, but since this is internal admin, we can be helpful.
+      res.status(404).json({ error: "User not found" });
       return;
     }
 
     if (admin.status !== "approved") {
-      res.status(403).json({ error: `Account status is ${admin.status}. Please wait for admin approval.` });
+      res.status(403).json({ error: `Account status is ${admin.status}. Cannot log in.` });
       return;
     }
+
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await db.update(adminsTable)
+      .set({ otp, otpExpiresAt: expiresAt })
+      .where(eq(adminsTable.id, admin.id));
+
+    // console.log(`\n\n===============================\n[MOCK EMAIL - LOGIN]\nTo: ${username}\nYour Medifind Login OTP is: ${otp}\n===============================\n\n`);
+    await sendOTPEmail(username, otp, "login");
+
+    res.json({ message: "OTP sent successfully" });
+  } catch (err: any) {
+    console.error('❌ SMTP send error (login):', {
+      message: err.message,
+      code: err.code,
+      response: err.response,
+      stack: err.stack,
+    });
+    res.status(500).json({ 
+      error: "Failed to send login OTP", 
+      details: err.message 
+    });
+  }
+});
+
+/**
+ * Step 2: Verify OTP and set login cookie
+ */
+router.post("/login/verify-otp", async (req, res) => {
+  const { username, otp } = req.body;
+  if (!username || !otp) {
+    res.status(400).json({ error: "Email and OTP are required" });
+    return;
+  }
+
+  try {
+    const [admin] = await db.select().from(adminsTable).where(eq(adminsTable.username, username));
+    
+    if (!admin) {
+      res.status(401).json({ error: "Invalid credentials" });
+      return;
+    }
+
+    if (admin.status !== "approved") {
+      res.status(403).json({ error: "Account not approved" });
+      return;
+    }
+
+    if (admin.otp !== otp) {
+      res.status(401).json({ error: "Invalid OTP" });
+      return;
+    }
+
+    if (!admin.otpExpiresAt || new Date(admin.otpExpiresAt).getTime() < Date.now()) {
+      res.status(401).json({ error: "OTP expired" });
+      return;
+    }
+
+    // Clear OTP so it can't be reused
+    await db.update(adminsTable)
+      .set({ otp: null, otpExpiresAt: null })
+      .where(eq(adminsTable.id, admin.id));
 
     const isProduction = process.env.NODE_ENV === "production";
     res.cookie("admin_id", admin.id.toString(), { 
@@ -92,8 +222,8 @@ router.post("/login", async (req, res) => {
 
     res.json({ id: admin.id, username: admin.username, employeeId: admin.employeeId, status: admin.status });
   } catch (err: any) {
-    console.error("Login route error:", err);
-    res.status(500).json({ error: err.message || "Internal server error" });
+    console.error("Login verify error:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -118,7 +248,6 @@ router.get("/me", async (req, res) => {
   res.json({ id: admin.id, username: admin.username, employeeId: admin.employeeId, status: admin.status });
 });
 
-// New endpoint for approving admins
 router.post("/approve", async (req, res) => {
   const currentAdminId = req.cookies?.admin_id;
   if (!currentAdminId) {
@@ -126,7 +255,7 @@ router.post("/approve", async (req, res) => {
     return;
   }
 
-  const { adminId: targetAdminId, action } = req.body; // action: 'approved' or 'rejected'
+  const { adminId: targetAdminId, action } = req.body;
   if (!targetAdminId || !['approved', 'rejected'].includes(action)) {
     res.status(400).json({ error: "Admin ID and valid action (approved/rejected) are required" });
     return;

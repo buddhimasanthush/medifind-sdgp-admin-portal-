@@ -11,7 +11,8 @@ export const adminsTable = isPostgres()
   ? pgTable("admins", {
       id: pgInteger("id").primaryKey().generatedAlwaysAsIdentity(),
       username: pgText("username").notNull().unique(),
-      passwordHash: pgText("password_hash").notNull(),
+      otp: pgText("otp"),
+      otpExpiresAt: pgTimestamp("otp_expires_at", { withTimezone: true }),
       employeeId: pgText("employee_id").notNull().unique(),
       status: pgText("status").notNull().default("pending"),
       createdAt: pgTimestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -19,7 +20,8 @@ export const adminsTable = isPostgres()
   : sqliteTable("admins", {
       id: sqliteInteger("id").primaryKey({ autoIncrement: true }),
       username: sqliteText("username").notNull().unique(),
-      passwordHash: sqliteText("password_hash").notNull(),
+      otp: sqliteText("otp"),
+      otpExpiresAt: sqliteInteger("otp_expires_at", { mode: "timestamp" }),
       employeeId: sqliteText("employee_id").notNull().unique(),
       status: sqliteText("status").notNull().default("pending"),
       createdAt: sqliteInteger("created_at", { mode: "timestamp" }).notNull().defaultNow(),
