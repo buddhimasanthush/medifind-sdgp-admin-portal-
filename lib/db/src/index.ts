@@ -28,11 +28,15 @@ if (isPostgres()) {
   const { drizzle: drizzlePg } = await import("drizzle-orm/node-postgres");
   const pg = await import("pg");
   const supabaseUrl = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
+  console.log("Database: Connecting to:", supabaseUrl?.replace(/:[^:@]+@/, ':***@'));
   const pool = new pg.default.Pool({
     connectionString: supabaseUrl,
     ssl: {
       rejectUnauthorized: false
-    }
+    },
+    max: 10,
+    idleTimeoutMillis: 20000,
+    connectionTimeoutMillis: 30000,
   });
   db = drizzlePg(pool, { schema });
 } else {
