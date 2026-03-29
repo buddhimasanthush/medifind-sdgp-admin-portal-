@@ -8,14 +8,17 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const rawPort = env.PORT || process.env.PORT || "3000";
   const port = Number(rawPort);
-  const basePath = env.BASE_PATH || process.env.BASE_PATH || "/";
-
   if (Number.isNaN(port) || port <= 0) {
     throw new Error(`Invalid PORT value: "${rawPort}"`);
   }
 
   return {
-    base: basePath,
+    base: '/medifind-sdgp-admin-portal-/',
+    define: {
+      'import.meta.env.VITE_API_URL': JSON.stringify(
+        env.VITE_API_URL || 'https://medifind-sdgp-admin-portal-production.up.railway.app'
+      ),
+    },
   plugins: [
     react(),
     tailwindcss(),

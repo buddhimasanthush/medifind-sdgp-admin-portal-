@@ -37,8 +37,8 @@ jobs:
 
       - name: Build
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_API_URL: https://medifind-sdgp-admin-portal-production.up.railway.app
+          BASE_PATH: /medifind-sdgp-admin-portal-/
         run: pnpm --filter @workspace/medifind-admin build
 
       - name: Prepare GitHub Pages (SPA & NoJekyll)
