@@ -30,7 +30,9 @@ if (isPostgres()) {
   const supabaseUrl = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
   const pool = new pg.default.Pool({
     connectionString: supabaseUrl,
-    ssl: { rejectUnauthorized: false }
+    ssl: {
+      rejectUnauthorized: false
+    }
   });
   db = drizzlePg(pool, { schema });
 } else {
