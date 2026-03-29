@@ -1,59 +1,33 @@
-import nodemailer from "nodemailer";
+import { Resend } from 'resend';
 
-/**
- * Configure the SMTP transporter using environment variables.
- * For Gmail, use an App Password (16 characters, no spaces).
- * SECURE: false is required for port 587 (STARTTLS).
- * TLS: rejectUnauthorized: false is added for smoother handshakes in Railway.
- */
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: Number(process.env.SMTP_PORT || "587"),
-  secure: false, // true for 465, false for 587
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS?.replace(/\s/g, ""), // Ensure no spaces
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-/**
- * Verify the SMTP transporter on server startup to catch config errors immediately.
- */
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('❌ SMTP transporter verification failed:', {
-      message: error.message,
-      stack: error.stack
-    });
-  } else {
-    console.log('✅ SMTP transporter is ready to send emails');
-  }
-});
-
-/**
- * Send an OTP email to the user.
- */
-export async function sendOTPEmail(to: string, otp: string, type: "login" | "registration" = "login") {
-  const subject = type === "login" ? "Medifind Login OTP" : "Medifind Registration OTP";
-  const body = `
-    <div style="font-family: sans-serif; max-width: 500px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-      <h2 style="color: #0d9488; text-align: center;">Medifind Admin</h2>
-      <p>Hello,</p>
-      <p>Your OTP for <strong>${type}</strong> is:</p>
-      <div style="background: #f3f4f6; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #111827; border-radius: 8px; margin: 20px 0;">
-        ${otp}
-      </div>
-      <p style="color: #6b7280; font-size: 14px;">This code will expire in 10 minutes. If you did not request this, please ignore this email.</p>
-    </div>
-  `;
-
-  return await transporter.sendMail({
-    from: `"Medifind Admin" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-    to,
-    subject,
-    html: body,
+export async function sendOTPEmail(to: string, otp: string): Promise<void> {
+  console.log(`📧 Sending OTP to: ${to}`);
+  const { data, error } = await resend.emails.send({
+    from: 'Medifind Admin <onboarding@resend.dev>',
+    to: [to],
+    subject: 'Your Medifind Admin Login Code',
+    html: `<div style="font-family:Arial,sans-serif;padding:32px;background:#0f172a;color:#f1f5f9;border-radius:12px;max-width:480px;margin:0 auto"><h2 style="color:#0ea5e9;text-align:center">Medifind Admin</h2><div style="background:#1e293b;border-radius:8px;padding:24px;text-align:center"><p style="color:#cbd5e1">Your login code:</p><div style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#0ea5e9;padding:16px;background:#0f172a;border-radius:8px">${otp}</div><p style="color:#64748b;font-size:13px;margin-top:16px">Expires in 10 minutes</p></div></div>`,
   });
+  if (error) {
+    console.error('❌ Resend error:', error);
+    throw new Error(`Email failed: ${error.message}`);
+  }
+  console.log(`✅ OTP sent successfully. ID: ${data?.id}`);
+}
+
+export async function sendRegistrationOTPEmail(to: string, otp: string): Promise<void> {
+  console.log(`📧 Sending registration OTP to: ${to}`);
+  const { data, error } = await resend.emails.send({
+    from: 'Medifind Admin <onboarding@resend.dev>',
+    to: [to],
+    subject: 'Complete Your Medifind Admin Registration',
+    html: `<div style="font-family:Arial,sans-serif;padding:32px;background:#0f172a;color:#f1f5f9;border-radius:12px;max-width:480px;margin:0 auto"><h2 style="color:#0ea5e9;text-align:center">Medifind Admin</h2><div style="background:#1e293b;border-radius:8px;padding:24px;text-align:center"><p style="color:#cbd5e1">Your registration code:</p><div style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#0ea5e9;padding:16px;background:#0f172a;border-radius:8px">${otp}</div><p style="color:#64748b;font-size:13px;margin-top:16px">Expires in 10 minutes</p></div></div>`,
+  });
+  if (error) {
+    console.error('❌ Resend registration error:', error);
+    throw new Error(`Registration email failed: ${error.message}`);
+  }
+  console.log(`✅ Registration OTP sent. ID: ${data?.id}`);
 }

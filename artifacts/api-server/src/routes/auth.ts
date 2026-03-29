@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, adminsTable, notificationsTable, eq } from "@workspace/db";
 import crypto from "crypto";
-import { sendOTPEmail } from "../lib/mailer";
+import { sendOTPEmail, sendRegistrationOTPEmail } from "../lib/mailer";
 
 const router: IRouter = Router();
 
@@ -48,15 +48,14 @@ router.post("/register/request-otp", async (req, res) => {
     }
 
     // console.log(`\n\n===============================\n[MOCK EMAIL - REGISTRATION]\nTo: ${username}\nYour Medifind Registration OTP is: ${otp}\n===============================\n\n`);
-    // sendOTPEmail already logs successes or throws detailed errors
-    await sendOTPEmail(username, otp, "registration");
+    await sendRegistrationOTPEmail(username, otp);
 
     res.json({ message: "OTP sent successfully" });
   } catch (error: any) {
     if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.message.includes('UNIQUE constraint failed')) {
       res.status(400).json({ error: "Employee ID already exists" });
     } else {
-      console.error('❌ SMTP send error (registration):', {
+      console.error('❌ Email send error (registration):', {
         message: error.message,
         code: error.code,
         response: error.response,
@@ -156,12 +155,11 @@ router.post("/login/request-otp", async (req, res) => {
       .set({ otp, otpExpiresAt: expiresAt })
       .where(eq(adminsTable.id, admin.id));
 
-    // console.log(`\n\n===============================\n[MOCK EMAIL - LOGIN]\nTo: ${username}\nYour Medifind Login OTP is: ${otp}\n===============================\n\n`);
-    await sendOTPEmail(username, otp, "login");
+    await sendOTPEmail(username, otp);
 
     res.json({ message: "OTP sent successfully" });
   } catch (err: any) {
-    console.error('❌ SMTP send error (login):', {
+    console.error('❌ Email send error (login):', {
       message: err.message,
       code: err.code,
       response: err.response,
