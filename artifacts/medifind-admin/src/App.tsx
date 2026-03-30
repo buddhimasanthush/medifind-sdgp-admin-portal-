@@ -30,43 +30,48 @@ const queryClient = new QueryClient({
   },
 });
 
+console.log('🔧 VITE_API_URL:', import.meta.env.VITE_API_URL);
+console.log('🔧 BASE_URL:', import.meta.env.BASE_URL);
+
 function Router() {
-  const [location] = useLocation();
   const { data: user, isLoading } = useQuery({
-    queryKey: ["/api/me"],
+    queryKey: ['/api/me'],
     queryFn: async () => {
       try {
-        return await customFetch("/api/me");
+        return await customFetch('/api/me');
       } catch (err: any) {
-        if (err.status === 401) return null;
+        if (err.status === 401 || err.message?.includes('401')) return null;
         throw err;
       }
     },
     staleTime: 0,
     gcTime: 0,
-    refetchOnMount: true,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     retry: false,
   });
 
+  console.log('🔍 Router render — user:', user, 'isLoading:', isLoading);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
 
-  if (!user && location !== "/login") {
+  // If no user — always show login regardless of URL
+  if (!user) {
+    console.log('🔒 No user found — showing login page');
     return <LoginPage />;
   }
 
-  if (user && location === "/login") {
-    return <Dashboard />; // Or redirect to /
-  }
-
+  // If user exists — show dashboard
+  console.log('✅ User found — showing dashboard');
   return (
     <Switch>
+      <Route path="/" component={Dashboard} />
       <Route path="/login" component={LoginPage} />
       <Route path="*">
         <AppLayout>

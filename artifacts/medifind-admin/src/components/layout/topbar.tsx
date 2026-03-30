@@ -18,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Link } from "wouter";
+import { customFetch } from "../../../../../lib/api-client-react/src/custom-fetch";
 
 export type Admin = {
   id: number;
@@ -35,51 +36,49 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
   });
 
   const handleLogout = async () => {
-    console.log("1️⃣ Logout button clicked");
-    const confirmed = window.confirm("Are you sure you want to log out?");
+    console.log('1️⃣ Logout clicked');
+    const confirmed = window.confirm('Are you sure you want to log out?');
     if (!confirmed) {
-      console.log("❌ Logout cancelled by user");
+      console.log('❌ Cancelled');
       return;
     }
-
-    console.log("2️⃣ Confirmed — calling backend logout");
+    console.log('2️⃣ Calling backend logout');
     try {
-      const response = await fetch("/api/logout", { method: "POST", credentials: "include" });
-      console.log("3️⃣ Backend logout response:", response);
-    } catch (e) {
-      console.error("3️⃣ Backend logout failed:", e);
+      const res = await fetch(
+        `${(import.meta as any).env.VITE_API_URL || ''}/api/logout`,
+        {
+          method: 'POST',
+          credentials: 'include',
+        }
+      );
+      console.log('3️⃣ Backend response status:', res.status);
+    } catch (err) {
+      console.error('3️⃣ Backend logout failed:', err);
     }
-    
-    console.log("4️⃣ Clearing React Query cache and local storage");
+    console.log('4️⃣ Clearing all caches and storage');
     queryClient.clear();
-    queryClient.setQueryData(["/api/me"], null);
-
-    // Attempt extra storage clear just in case any 3rd party lib was using it
+    queryClient.removeQueries();
+    queryClient.setQueryData(['/api/me'], null);
     localStorage.clear();
     sessionStorage.clear();
-
-    console.log("5️⃣ Query data after clear:", queryClient.getQueryData(["/api/me"]));
-
-    const baseUrl = import.meta.env.BASE_URL || "/medifind-sdgp-admin-portal-/";
-    const origin = window.location.origin;
-    console.log("6️⃣ Redirecting to:", origin + baseUrl);
-    
-    window.location.replace(origin + baseUrl);
+    console.log('5️⃣ Cache cleared. /api/me data:', queryClient.getQueryData(['/api/me']));
+    const base = (import.meta as any).env.BASE_URL || '/medifind-sdgp-admin-portal-/';
+    const redirectUrl = window.location.origin + base;
+    console.log('6️⃣ Hard redirecting to:', redirectUrl);
+    window.location.replace(redirectUrl);
   };
 
   const { data: notifications = [] } = useQuery<any[]>({
     queryKey: ["/api/notifications"],
     queryFn: async () => {
-      const res = await fetch("/api/notifications");
-      if (!res.ok) throw new Error("Failed to fetch notifications");
-      return res.json();
+      return await customFetch<any[]>("/api/notifications");
     },
     refetchInterval: 10000,
   });
 
   const markReadMutation = useMutation({
     mutationFn: async (id: number) => {
-      await fetch(`/api/notifications/${id}/read`, { method: "PATCH" });
+      await customFetch(`/api/notifications/${id}/read`, { method: "PATCH" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
@@ -88,13 +87,11 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
 
   const approveMutation = useMutation({
     mutationFn: async ({ adminId, action }: { adminId: number; action: string }) => {
-      const res = await fetch("/api/approve", {
+      return await customFetch<any>("/api/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ adminId, action }),
       });
-      if (!res.ok) throw new Error("Failed to update admin status");
-      return res.json();
     },
     onSuccess: (data) => {
       toast.success(data.message);

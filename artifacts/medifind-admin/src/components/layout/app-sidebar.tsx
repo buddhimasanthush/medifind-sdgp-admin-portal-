@@ -43,36 +43,36 @@ export function AppSidebar() {
   });
 
   const handleLogout = async () => {
-    console.log("1️⃣ Logout button clicked");
-    const confirmed = window.confirm("Are you sure you want to log out?");
+    console.log('1️⃣ Logout clicked');
+    const confirmed = window.confirm('Are you sure you want to log out?');
     if (!confirmed) {
-      console.log("❌ Logout cancelled by user");
+      console.log('❌ Cancelled');
       return;
     }
-
-    console.log("2️⃣ Confirmed — calling backend logout");
+    console.log('2️⃣ Calling backend logout');
     try {
-      const response = await customFetch("/api/logout", { method: "POST" });
-      console.log("3️⃣ Backend logout response:", response);
-    } catch (error) {
-      console.error("3️⃣ Backend logout failed:", error);
+      const res = await fetch(
+        `${(import.meta as any).env.VITE_API_URL || ''}/api/logout`,
+        {
+          method: 'POST',
+          credentials: 'include',
+        }
+      );
+      console.log('3️⃣ Backend response status:', res.status);
+    } catch (err) {
+      console.error('3️⃣ Backend logout failed:', err);
     }
-
-    console.log("4️⃣ Clearing React Query cache and local storage");
+    console.log('4️⃣ Clearing all caches and storage');
     queryClient.clear();
-    queryClient.setQueryData(["/api/me"], null);
-    
-    // Attempt extra storage clear just in case any 3rd party lib was using it
+    queryClient.removeQueries();
+    queryClient.setQueryData(['/api/me'], null);
     localStorage.clear();
     sessionStorage.clear();
-
-    console.log("5️⃣ Query data after clear:", queryClient.getQueryData(["/api/me"]));
-    
-    const baseUrl = import.meta.env.BASE_URL || "/medifind-sdgp-admin-portal-/";
-    const origin = window.location.origin;
-    console.log("6️⃣ Redirecting to:", origin + baseUrl);
-    
-    window.location.replace(origin + baseUrl);
+    console.log('5️⃣ Cache cleared. /api/me data:', queryClient.getQueryData(['/api/me']));
+    const base = (import.meta as any).env.BASE_URL || '/medifind-sdgp-admin-portal-/';
+    const redirectUrl = window.location.origin + base;
+    console.log('6️⃣ Hard redirecting to:', redirectUrl);
+    window.location.replace(redirectUrl);
   };
 
   return (

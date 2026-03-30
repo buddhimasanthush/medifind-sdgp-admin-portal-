@@ -271,12 +271,13 @@ async function parseSuccessBody(
   }
 }
 
+const VITE_API_URL = (import.meta as any).env?.VITE_API_URL?.replace(/\/$/, '') || '';
+
 export async function customFetch<T = unknown>(
   input: RequestInfo | URL,
   options: CustomFetchOptions = {},
 ): Promise<T> {
   const { responseType = "auto", headers: headersInit, ...init } = options;
-
   const method = resolveMethod(input, init.method);
 
   if (init.body != null && (method === "GET" || method === "HEAD")) {
@@ -299,20 +300,27 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const baseUrl = (import.meta as any).env?.VITE_API_URL?.replace(/\/$/, "") || "";
-  const finalInput = typeof input === "string" && input.startsWith("/") 
-    ? `${baseUrl}${input}` 
-    : input;
+  let finalInput = input;
 
-  const response = await fetch(finalInput, { credentials: "include", ...init, method, headers });
+  // If it's a relative path starting with /api, prepend the Railway URL
+  if (typeof input === 'string' && input.startsWith('/api')) {
+    finalInput = `${VITE_API_URL}${input}`;
+    console.log('🌐 API call resolved to:', finalInput);
+  }
+
+  const response = await fetch(finalInput as RequestInfo, {
+    credentials: 'include',
+    ...init,
+    method,
+    headers,
+  });
 
   if (!response.ok) {
     if (response.status === 401) {
-      console.log('401 Unauthorized received — forcing redirect');
-      // If we're not already on the login page, hard redirect to clear state and block back button
-      if (!window.location.pathname.endsWith('/login')) {
-        window.location.replace(window.location.origin + ((import.meta as any).env?.BASE_URL || '/'));
-      }
+      console.log('🔒 401 received — forcing logout redirect');
+      const baseUrl = (import.meta as any).env?.BASE_URL || '/medifind-sdgp-admin-portal-/';
+      window.location.replace(window.location.origin + baseUrl);
+      return null as T;
     }
     const errorData = await parseErrorBody(response, method);
     throw new ApiError(response, errorData, requestInfo);

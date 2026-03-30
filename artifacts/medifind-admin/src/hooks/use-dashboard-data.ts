@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { customFetch } from "../../../../lib/api-client-react/src/custom-fetch";
 
 export type PharmacyApproval = {
   id: number;
@@ -33,9 +34,7 @@ export function useDashboardData() {
   const { data: approvals = [], isLoading: isLoadingApprovals } = useQuery<PharmacyApproval[]>({
     queryKey: ["/api/pharmacies", { status: "pending" }],
     queryFn: async () => {
-      const res = await fetch("/api/pharmacies?status=pending");
-      if (!res.ok) throw new Error("Failed to fetch pending pharmacies");
-      return res.json();
+      return await customFetch<PharmacyApproval[]>("/api/pharmacies?status=pending");
     },
   });
 
@@ -43,9 +42,7 @@ export function useDashboardData() {
   const { data: ocrLogs = [], isLoading: isLoadingLogs } = useQuery<RecentScan[]>({
     queryKey: ["/api/ocr-logs"],
     queryFn: async () => {
-      const res = await fetch("/api/ocr-logs");
-      if (!res.ok) throw new Error("Failed to fetch OCR logs");
-      return res.json();
+      return await customFetch<RecentScan[]>("/api/ocr-logs");
     },
   });
 
@@ -53,9 +50,7 @@ export function useDashboardData() {
   const { data: orders = [] } = useQuery({
     queryKey: ["/api/orders"],
     queryFn: async () => {
-      const res = await fetch("/api/orders");
-      if (!res.ok) throw new Error("Failed to fetch orders");
-      return res.json();
+      return await customFetch("/api/orders");
     },
   });
 
@@ -63,21 +58,17 @@ export function useDashboardData() {
   const { data: stats, isLoading: isLoadingStats } = useQuery<DashboardStats>({
     queryKey: ["/api/stats"],
     queryFn: async () => {
-      const res = await fetch("/api/stats");
-      if (!res.ok) throw new Error("Failed to fetch dashboard stats");
-      return res.json();
+      return await customFetch<DashboardStats>("/api/stats");
     },
   });
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const res = await fetch(`/api/pharmacies/${id}/status`, {
+      return await customFetch(`/api/pharmacies/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
-      if (!res.ok) throw new Error("Failed to update status");
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pharmacies"] });
