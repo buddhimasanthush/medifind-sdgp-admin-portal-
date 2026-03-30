@@ -226,8 +226,14 @@ router.post("/login/verify-otp", async (req, res) => {
 });
 
 router.post("/logout", (req, res) => {
-  res.clearCookie("admin_id");
-  res.json({ message: "Logged out" });
+  const isProduction = process.env.NODE_ENV === "production";
+  res.clearCookie("admin_id", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  });
+  console.log("✅ Admin logged out successfully");
+  res.json({ message: "Logged out successfully" });
 });
 
 router.get("/me", async (req, res) => {

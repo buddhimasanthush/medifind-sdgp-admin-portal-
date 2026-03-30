@@ -1,4 +1,4 @@
-import { Search, Bell, ChevronDown, Check, X, UserPlus } from "lucide-react";
+import { Search, Bell, ChevronDown, Check, X, UserPlus, LogOut, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -31,8 +31,21 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
 
   const { data: user } = useQuery<Admin>({
     queryKey: ["/api/me"],
-    enabled: false, // Already fetched in App.tsx
+    enabled: false,
   });
+
+  const handleLogout = async () => {
+    const confirmed = window.confirm("Are you sure you want to log out?");
+    if (!confirmed) return;
+    try {
+      await fetch("/api/logout", { method: "POST", credentials: "include" });
+    } catch (e) {
+      console.error("Logout error:", e);
+    } finally {
+      queryClient.setQueryData(["/api/me"], null);
+      queryClient.clear();
+    }
+  };
 
   const { data: notifications = [] } = useQuery<any[]>({
     queryKey: ["/api/notifications"],
@@ -41,7 +54,7 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
       if (!res.ok) throw new Error("Failed to fetch notifications");
       return res.json();
     },
-    refetchInterval: 10000, // Poll every 10 seconds
+    refetchInterval: 10000,
   });
 
   const markReadMutation = useMutation({
@@ -87,18 +100,18 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
       <div className="flex items-center gap-4 flex-1 justify-end">
         <div className="relative w-full max-w-sm hidden md:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search pharmacies, patients, or orders..." 
+          <Input
+            placeholder="Search pharmacies, patients, or orders..."
             className="w-full pl-9 bg-muted/50 border-muted text-foreground placeholder:text-muted-foreground focus-visible:bg-muted/80 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary rounded-full h-10 transition-all font-sans"
           />
         </div>
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          
+
           <DropdownMenu onOpenChange={(open) => {
             if (!open && unreadCount > 0) {
-              // Mark all as read when closing the dropdown? 
+              // Mark all as read when closing the dropdown?
               // Or better, mark individual ones.
             }
           }}>
@@ -127,8 +140,8 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
                     {notifications.map((n) => {
                       const metadata = n.metadata ? JSON.parse(n.metadata) : {};
                       return (
-                        <div 
-                          key={n.id} 
+                        <div
+                          key={n.id}
                           className={`p-4 border-b border-muted/30 transition-colors hover:bg-muted/20 ${!n.read ? 'bg-primary/5' : ''}`}
                           onClick={() => !n.read && markReadMutation.mutate(n.id)}
                         >
@@ -149,11 +162,11 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
                               <p className="text-xs text-muted-foreground mt-1">
                                 {new Date(n.createdAt).toLocaleString()}
                               </p>
-                              
+
                               {n.type === 'new_employee_signup' && !n.read && (
                                 <div className="flex items-center gap-2 mt-3">
-                                  <Button 
-                                    size="sm" 
+                                  <Button
+                                    size="sm"
                                     className="h-7 px-3 text-xs bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -163,8 +176,8 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
                                   >
                                     <Check className="w-3 h-3 mr-1" /> Approve
                                   </Button>
-                                  <Button 
-                                    size="sm" 
+                                  <Button
+                                    size="sm"
                                     variant="outline"
                                     className="h-7 px-3 text-xs border-muted text-muted-foreground hover:text-foreground rounded-full"
                                     onClick={(e) => {
@@ -195,21 +208,44 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
 
         <div className="h-8 w-px bg-muted mx-1 hidden sm:block" />
 
-        <Link href="/profile">
-          <button className="flex items-center gap-3 hover:bg-muted p-1.5 pr-3 rounded-full transition-colors group text-left">
-            <Avatar className="w-8 h-8 border border-muted group-hover:border-primary transition-colors">
-              <AvatarFallback className="bg-primary/20 text-primary font-medium text-sm font-display uppercase">
-                {user?.username?.substring(0, 2) || "AD"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex items-center gap-1 hidden sm:flex">
-              <span className="text-sm font-medium text-foreground font-display">
-                {user?.username || "Admin Profile"}
-              </span>
-              <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-            </div>
-          </button>
-        </Link>
+        {/* User dropdown with Profile + Logout */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-3 hover:bg-muted p-1.5 pr-3 rounded-full transition-colors group text-left">
+              <Avatar className="w-8 h-8 border border-muted group-hover:border-primary transition-colors">
+                <AvatarFallback className="bg-primary/20 text-primary font-medium text-sm font-display uppercase">
+                  {user?.username?.substring(0, 2) || "AD"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex items-center gap-1 hidden sm:flex">
+                <span className="text-sm font-medium text-foreground font-display">
+                  {user?.username || "Admin Profile"}
+                </span>
+                <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </div>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52 rounded-2xl border-muted bg-card shadow-2xl p-1">
+            <DropdownMenuLabel className="px-3 py-2 text-xs text-muted-foreground font-sans truncate">
+              {user?.username || "Admin"}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-muted/50" />
+            <DropdownMenuItem asChild>
+              <Link href="/profile" className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer rounded-xl">
+                <User className="w-4 h-4" />
+                My Profile
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-muted/50" />
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:text-red-300 focus:text-red-300 focus:bg-red-400/10 cursor-pointer rounded-xl"
+            >
+              <LogOut className="w-4 h-4" />
+              Log Out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

@@ -7,6 +7,7 @@ import {
   FileScan,
   ShoppingCart,
   Settings,
+  LogOut,
 } from "lucide-react";
 import {
   Sidebar,
@@ -18,7 +19,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { customFetch } from "../../../../../lib/api-client-react/src/custom-fetch";
+import { toast } from "sonner";
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -31,9 +36,32 @@ const navItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const queryClient = useQueryClient();
+
+  const { data: user } = useQuery<any>({
+    queryKey: ["/api/me"],
+    enabled: false, // Already fetched in App.tsx
+  });
+
+  const handleLogout = async () => {
+    const confirmed = window.confirm("Are you sure you want to log out?");
+    if (!confirmed) return;
+
+    try {
+      await customFetch("/api/logout", { method: "POST" });
+    } catch (error) {
+      // Proceed with local logout even if API call fails
+      console.error("Logout API error:", error);
+    } finally {
+      // Clear all cached data and redirect to login
+      queryClient.setQueryData(["/api/me"], null);
+      queryClient.clear();
+      toast.success("Logged out successfully");
+    }
+  };
 
   return (
-    <Sidebar className="border-r border-white/10 bg-[#060606] text-white">
+    <Sidebar className="border-r border-white/10 bg-[#060606] text-white flex flex-col">
       <SidebarHeader className="p-4 border-b border-white/10">
         <div className="flex items-center gap-2 px-2 py-2">
           <div className="bg-primary p-2 rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.4)]">
@@ -44,7 +72,7 @@ export function AppSidebar() {
           </span>
         </div>
       </SidebarHeader>
-      <SidebarContent className="pt-6">
+      <SidebarContent className="pt-6 flex-1">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-widest text-muted-foreground mb-4 px-4 font-sans font-semibold">
             Platform
@@ -78,6 +106,24 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="p-4 border-t border-white/10">
+        <div className="px-2 mb-2">
+          <p className="text-xs text-muted-foreground truncate font-sans">
+            Signed in as
+          </p>
+          <p className="text-xs font-medium text-white truncate font-sans">
+            {user?.username || "Admin"}
+          </p>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-xl transition-all duration-200 border border-transparent hover:border-red-400/20 font-sans font-medium"
+        >
+          <LogOut className="w-4 h-4 shrink-0" />
+          <span>Log Out</span>
+        </button>
+      </SidebarFooter>
     </Sidebar>
   );
 }
