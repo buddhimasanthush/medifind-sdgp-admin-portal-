@@ -143,8 +143,8 @@ router.post("/login/request-otp", async (req, res) => {
       return;
     }
 
-    if (admin.status !== "approved") {
-      res.status(403).json({ error: `Account status is ${admin.status}. Cannot log in.` });
+    if (admin.status !== "active") {
+      res.status(403).json({ error: "Your account is not active. Please contact your administrator." });
       return;
     }
 
@@ -190,8 +190,8 @@ router.post("/login/verify-otp", async (req, res) => {
       return;
     }
 
-    if (admin.status !== "approved") {
-      res.status(403).json({ error: "Account not approved" });
+    if (admin.status !== "active") {
+      res.status(403).json({ error: "Your account is not active. Please contact your administrator." });
       return;
     }
 
