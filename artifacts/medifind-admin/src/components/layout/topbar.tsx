@@ -41,10 +41,13 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
       await fetch("/api/logout", { method: "POST", credentials: "include" });
     } catch (e) {
       console.error("Logout error:", e);
-    } finally {
-      queryClient.setQueryData(["/api/me"], null);
-      queryClient.clear();
     }
+    
+    // Set user to null - this triggers App.tsx to show LoginPage immediately
+    queryClient.setQueryData(["/api/me"], null);
+
+    // Hard redirect with replace() so back button is blocked
+    window.location.replace(window.location.origin + import.meta.env.BASE_URL);
   };
 
   const { data: notifications = [] } = useQuery<any[]>({

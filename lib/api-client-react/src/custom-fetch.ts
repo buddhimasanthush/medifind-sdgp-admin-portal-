@@ -307,6 +307,13 @@ export async function customFetch<T = unknown>(
   const response = await fetch(finalInput, { credentials: "include", ...init, method, headers });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      console.log('401 Unauthorized received — forcing redirect');
+      // If we're not already on the login page, hard redirect to clear state and block back button
+      if (!window.location.pathname.endsWith('/login')) {
+        window.location.replace(window.location.origin + ((import.meta as any).env?.BASE_URL || '/'));
+      }
+    }
     const errorData = await parseErrorBody(response, method);
     throw new ApiError(response, errorData, requestInfo);
   }
