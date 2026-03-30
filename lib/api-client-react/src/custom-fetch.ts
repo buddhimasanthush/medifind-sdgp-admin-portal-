@@ -317,10 +317,10 @@ export async function customFetch<T = unknown>(
 
   if (!response.ok) {
     if (response.status === 401) {
-      console.log('🔒 401 received — forcing logout redirect');
-      const baseUrl = (import.meta as any).env?.BASE_URL || '/medifind-sdgp-admin-portal-/';
-      window.location.replace(window.location.origin + baseUrl);
-      return null as T;
+      // Just throw so calling code can handle it (no redirect loop)
+      const err = new Error('Unauthorized');
+      (err as any).status = 401;
+      throw err;
     }
     const errorData = await parseErrorBody(response, method);
     throw new ApiError(response, errorData, requestInfo);

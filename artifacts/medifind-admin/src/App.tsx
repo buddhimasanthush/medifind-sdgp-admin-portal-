@@ -38,16 +38,23 @@ function Router() {
     queryKey: ['/api/me'],
     queryFn: async () => {
       try {
-        return await customFetch('/api/me');
-      } catch (err: any) {
-        if (err.status === 401 || err.message?.includes('401')) return null;
-        throw err;
+        const url = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/me` : '/api/me';
+        const response = await fetch(url, { credentials: 'include' });
+        if (response.status === 401) {
+          return null; // Not logged in — show login page, NO redirect
+        }
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+      } catch (err) {
+        return null; // Any error — show login page
       }
     },
     staleTime: 0,
     gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false, // IMPORTANT: false to prevent extra calls
     retry: false,
   });
 

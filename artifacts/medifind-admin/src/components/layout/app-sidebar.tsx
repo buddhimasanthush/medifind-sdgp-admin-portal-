@@ -43,36 +43,20 @@ export function AppSidebar() {
   });
 
   const handleLogout = async () => {
-    console.log('1️⃣ Logout clicked');
     const confirmed = window.confirm('Are you sure you want to log out?');
-    if (!confirmed) {
-      console.log('❌ Cancelled');
-      return;
-    }
-    console.log('2️⃣ Calling backend logout');
+    if (!confirmed) return;
     try {
-      const res = await fetch(
-        `${(import.meta as any).env.VITE_API_URL || ''}/api/logout`,
-        {
-          method: 'POST',
-          credentials: 'include',
-        }
-      );
-      console.log('3️⃣ Backend response status:', res.status);
+      await fetch(`${(import.meta as any).env.VITE_API_URL || ''}/api/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
     } catch (err) {
-      console.error('3️⃣ Backend logout failed:', err);
+      console.error('Logout error:', err);
     }
-    console.log('4️⃣ Clearing all caches and storage');
+    // Clear cache — this makes /api/me return null — App.tsx shows LoginPage automatically
     queryClient.clear();
-    queryClient.removeQueries();
     queryClient.setQueryData(['/api/me'], null);
-    localStorage.clear();
-    sessionStorage.clear();
-    console.log('5️⃣ Cache cleared. /api/me data:', queryClient.getQueryData(['/api/me']));
-    const base = (import.meta as any).env.BASE_URL || '/medifind-sdgp-admin-portal-/';
-    const redirectUrl = window.location.origin + base;
-    console.log('6️⃣ Hard redirecting to:', redirectUrl);
-    window.location.replace(redirectUrl);
+    // No window.location needed — React Query state change handles the UI update
   };
 
   return (
