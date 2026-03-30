@@ -215,7 +215,8 @@ router.post("/login/verify-otp", async (req, res) => {
       httpOnly: true, 
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
-      maxAge: 3600000 // 1 hour
+      maxAge: 3600000, // 1 hour
+      path: "/",
     });
 
     res.json({ id: admin.id, username: admin.username, employeeId: admin.employeeId, status: admin.status });
@@ -226,17 +227,23 @@ router.post("/login/verify-otp", async (req, res) => {
 });
 
 router.post("/logout", (req, res) => {
+  console.log("🔓 Logout route hit");
+  console.log("Cookies before clear:", req.cookies);
+
   const isProduction = process.env.NODE_ENV === "production";
   res.clearCookie("admin_id", {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
+    path: "/",
   });
-  console.log("✅ Admin logged out successfully");
-  res.json({ message: "Logged out successfully" });
+
+  console.log("✅ Cookie cleared");
+  res.status(200).json({ success: true, message: "Logged out successfully" });
 });
 
 router.get("/me", async (req, res) => {
+  console.log("📍 /api/me called, cookies:", req.cookies);
   const adminId = req.cookies?.admin_id;
   if (!adminId) {
     res.status(401).json({ error: "Not authenticated" });

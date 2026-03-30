@@ -42,6 +42,11 @@ function Router() {
         throw err;
       }
     },
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    retry: false,
   });
 
   if (isLoading) {

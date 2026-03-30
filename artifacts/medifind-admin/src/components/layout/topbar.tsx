@@ -35,19 +35,36 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
   });
 
   const handleLogout = async () => {
+    console.log("1️⃣ Logout button clicked");
     const confirmed = window.confirm("Are you sure you want to log out?");
-    if (!confirmed) return;
+    if (!confirmed) {
+      console.log("❌ Logout cancelled by user");
+      return;
+    }
+
+    console.log("2️⃣ Confirmed — calling backend logout");
     try {
-      await fetch("/api/logout", { method: "POST", credentials: "include" });
+      const response = await fetch("/api/logout", { method: "POST", credentials: "include" });
+      console.log("3️⃣ Backend logout response:", response);
     } catch (e) {
-      console.error("Logout error:", e);
+      console.error("3️⃣ Backend logout failed:", e);
     }
     
-    // Set user to null - this triggers App.tsx to show LoginPage immediately
+    console.log("4️⃣ Clearing React Query cache and local storage");
+    queryClient.clear();
     queryClient.setQueryData(["/api/me"], null);
 
-    // Hard redirect with replace() so back button is blocked
-    window.location.replace(window.location.origin + import.meta.env.BASE_URL);
+    // Attempt extra storage clear just in case any 3rd party lib was using it
+    localStorage.clear();
+    sessionStorage.clear();
+
+    console.log("5️⃣ Query data after clear:", queryClient.getQueryData(["/api/me"]));
+
+    const baseUrl = import.meta.env.BASE_URL || "/medifind-sdgp-admin-portal-/";
+    const origin = window.location.origin;
+    console.log("6️⃣ Redirecting to:", origin + baseUrl);
+    
+    window.location.replace(origin + baseUrl);
   };
 
   const { data: notifications = [] } = useQuery<any[]>({
