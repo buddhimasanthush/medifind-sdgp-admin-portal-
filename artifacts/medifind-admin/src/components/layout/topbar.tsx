@@ -59,7 +59,7 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
     queryFn: async () => {
       return await customFetch<any[]>("/api/notifications");
     },
-    refetchInterval: 10000,
+    refetchInterval: 5000,
   });
 
   const markReadMutation = useMutation({

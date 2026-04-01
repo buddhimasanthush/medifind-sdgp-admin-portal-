@@ -273,9 +273,10 @@ router.post("/approve", async (req, res) => {
   }
 
   try {
+    const dbStatus = action === 'approved' ? 'active' : 'rejected';
     const [updatedAdmin] = await db
       .update(adminsTable)
-      .set({ status: action })
+      .set({ status: dbStatus })
       .where(eq(adminsTable.id, parseInt(targetAdminId)))
       .returning();
 
