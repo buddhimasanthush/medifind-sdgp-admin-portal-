@@ -78,7 +78,6 @@ function Router() {
   console.log('✅ User found — showing dashboard');
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
       <Route path="/login" component={LoginPage} />
       <Route path="*">
         <AppLayout>
