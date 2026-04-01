@@ -46,10 +46,12 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
     } catch (err) {
       console.error('Logout error:', err);
     }
-    // Clear cache — this makes /api/me return null — App.tsx shows LoginPage automatically
+    // Clear cache — this makes /api/me return null
     queryClient.clear();
     queryClient.setQueryData(['/api/me'], null);
-    // No window.location needed — React Query state change handles the UI update
+    
+    // Force redirect to login
+    window.location.replace(import.meta.env.BASE_URL + 'login');
   };
 
   const { data: notifications = [] } = useQuery<any[]>({

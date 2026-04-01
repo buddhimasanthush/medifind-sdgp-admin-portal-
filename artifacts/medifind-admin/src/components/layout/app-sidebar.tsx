@@ -53,10 +53,11 @@ export function AppSidebar() {
     } catch (err) {
       console.error('Logout error:', err);
     }
-    // Clear cache — this makes /api/me return null — App.tsx shows LoginPage automatically
+    // Clear cache
     queryClient.clear();
     queryClient.setQueryData(['/api/me'], null);
-    // No window.location needed — React Query state change handles the UI update
+    // Force redirect using the Vite base URL
+    window.location.replace(import.meta.env.BASE_URL + 'login');
   };
 
   return (

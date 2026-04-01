@@ -93,7 +93,7 @@ export default function ProfilePage() {
                   <Mail className="w-4 h-4" />
                   <span className="text-xs uppercase font-bold tracking-tight">System Email</span>
                 </div>
-                <p className="text-foreground font-medium">{user.username}@medifind.admin</p>
+                <p className="text-foreground font-medium">{user.username}</p>
               </div>
             </div>
           </CardContent>
