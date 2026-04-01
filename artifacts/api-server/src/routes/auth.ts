@@ -266,7 +266,7 @@ router.post("/approve", async (req, res) => {
     return;
   }
 
-  const { adminId: targetAdminId, action } = req.body;
+  const { adminId: targetAdminId, action, notificationId } = req.body;
   if (!targetAdminId || !['approved', 'rejected'].includes(action)) {
     res.status(400).json({ error: "Admin ID and valid action (approved/rejected) are required" });
     return;
@@ -283,6 +283,14 @@ router.post("/approve", async (req, res) => {
     if (!updatedAdmin) {
       res.status(404).json({ error: "Admin not found" });
       return;
+    }
+
+    // Mark notification as read if provided
+    if (notificationId) {
+      await db
+        .update(notificationsTable)
+        .set({ read: true })
+        .where(eq(notificationsTable.id, parseInt(notificationId)));
     }
 
     res.json({ message: `Admin ${action} correctly`, admin: updatedAdmin });

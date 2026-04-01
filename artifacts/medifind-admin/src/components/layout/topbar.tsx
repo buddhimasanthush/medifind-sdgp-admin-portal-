@@ -72,11 +72,11 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
   });
 
   const approveMutation = useMutation({
-    mutationFn: async ({ adminId, action }: { adminId: number; action: string }) => {
+    mutationFn: async ({ adminId, action, notificationId }: { adminId: number; action: string; notificationId?: number }) => {
       return await customFetch<any>("/api/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ adminId, action }),
+        body: JSON.stringify({ adminId, action, notificationId }),
       });
     },
     onSuccess: (data) => {
@@ -174,8 +174,11 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
                                     onClick={async (e) => {
                                       e.stopPropagation();
                                       try {
-                                        await approveMutation.mutateAsync({ adminId: metadata.adminId, action: 'approved' });
-                                        await markReadMutation.mutateAsync(n.id);
+                                        await approveMutation.mutateAsync({ 
+                                          adminId: metadata.adminId, 
+                                          action: 'approved',
+                                          notificationId: n.id
+                                        });
                                       } catch (err) {
                                         // Error handled by mutation onError
                                       }
@@ -190,8 +193,11 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
                                     onClick={async (e) => {
                                       e.stopPropagation();
                                       try {
-                                        await approveMutation.mutateAsync({ adminId: metadata.adminId, action: 'rejected' });
-                                        await markReadMutation.mutateAsync(n.id);
+                                        await approveMutation.mutateAsync({ 
+                                          adminId: metadata.adminId, 
+                                          action: 'rejected',
+                                          notificationId: n.id
+                                        });
                                       } catch (err) {
                                         // Error handled by mutation onError
                                       }
