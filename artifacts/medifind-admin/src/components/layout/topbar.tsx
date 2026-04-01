@@ -133,14 +133,14 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-muted/50" />
               <ScrollArea className="h-[400px]">
-                {notifications.length === 0 ? (
+                {unreadCount === 0 ? (
                   <div className="p-8 text-center text-muted-foreground flex flex-col items-center gap-2">
                     <Bell className="w-8 h-8 opacity-20" />
                     <p className="text-sm">All caught up!</p>
                   </div>
                 ) : (
                   <div className="flex flex-col">
-                    {notifications.map((n) => {
+                    {notifications.filter(n => !n.read).map((n) => {
                       const metadata = n.metadata ? JSON.parse(n.metadata) : {};
                       return (
                         <div
