@@ -59,7 +59,7 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
     queryFn: async () => {
       return await customFetch<any[]>("/api/notifications");
     },
-    refetchInterval: 5000,
+    refetchInterval: 30000,
   });
 
   const markReadMutation = useMutation({
@@ -171,10 +171,14 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
                                   <Button
                                     size="sm"
                                     className="h-7 px-3 text-xs bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
-                                    onClick={(e) => {
+                                    onClick={async (e) => {
                                       e.stopPropagation();
-                                      approveMutation.mutate({ adminId: metadata.adminId, action: 'approved' });
-                                      markReadMutation.mutate(n.id);
+                                      try {
+                                        await approveMutation.mutateAsync({ adminId: metadata.adminId, action: 'approved' });
+                                        await markReadMutation.mutateAsync(n.id);
+                                      } catch (err) {
+                                        // Error handled by mutation onError
+                                      }
                                     }}
                                   >
                                     <Check className="w-3 h-3 mr-1" /> Approve
@@ -183,10 +187,14 @@ export function TopBar({ title = "Dashboard" }: { title?: string }) {
                                     size="sm"
                                     variant="outline"
                                     className="h-7 px-3 text-xs border-muted text-muted-foreground hover:text-foreground rounded-full"
-                                    onClick={(e) => {
+                                    onClick={async (e) => {
                                       e.stopPropagation();
-                                      approveMutation.mutate({ adminId: metadata.adminId, action: 'rejected' });
-                                      markReadMutation.mutate(n.id);
+                                      try {
+                                        await approveMutation.mutateAsync({ adminId: metadata.adminId, action: 'rejected' });
+                                        await markReadMutation.mutateAsync(n.id);
+                                      } catch (err) {
+                                        // Error handled by mutation onError
+                                      }
                                     }}
                                   >
                                     <X className="w-3 h-3 mr-1" /> Reject

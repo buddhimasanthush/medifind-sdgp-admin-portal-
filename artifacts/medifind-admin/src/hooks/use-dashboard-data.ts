@@ -36,7 +36,7 @@ export function useDashboardData() {
     queryFn: async () => {
       return await customFetch<PharmacyApproval[]>("/api/pharmacies?status=pending");
     },
-    refetchInterval: 5000,
+    refetchInterval: 30000,
   });
 
   // Fetch recent OCR scans
@@ -45,7 +45,7 @@ export function useDashboardData() {
     queryFn: async () => {
       return await customFetch<RecentScan[]>("/api/ocr-logs");
     },
-    refetchInterval: 5000,
+    refetchInterval: 30000,
   });
 
   // Fetch orders for revenue calculation
@@ -62,7 +62,7 @@ export function useDashboardData() {
     queryFn: async () => {
       return await customFetch<DashboardStats>("/api/stats");
     },
-    refetchInterval: 5000,
+    refetchInterval: 30000,
   });
 
   const updateStatusMutation = useMutation({
