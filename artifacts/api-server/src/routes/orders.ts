@@ -2,10 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, ordersTable, ilike, or, eq } from "@workspace/db";
 import {
   ListOrdersQueryParams,
-  UpdateOrderStatusParams,
   UpdateOrderStatusBody,
-  ListOrdersResponse,
-  UpdateOrderStatusResponse,
 } from "@workspace/api-zod";
 import { serializeDates, serializeDatesArray } from "../lib/serialize.js";
 
@@ -27,18 +24,17 @@ router.get("/orders", async (req, res): Promise<void> => {
 
     if (query.data.search) {
       const term = `%${query.data.search}%`;
+      // Searching by ID or Status in the base table
       rows = rows.where(
         or(
-          ilike(ordersTable.patientName, term),
-          ilike(ordersTable.pharmacyName, term),
-          ilike(ordersTable.orderId, term),
-          ilike(ordersTable.medications, term)
+          ilike(ordersTable.id, term),
+          ilike(ordersTable.status, term)
         )
       );
     }
 
     const results = await rows.orderBy(ordersTable.createdAt);
-    res.json(ListOrdersResponse.parse(serializeDatesArray(results)));
+    res.json(serializeDatesArray(results));
   } catch (error: any) {
     console.error("[orders] Route error:", req.method, req.path, error?.message);
     res.status(500).json({
@@ -50,11 +46,7 @@ router.get("/orders", async (req, res): Promise<void> => {
 
 router.patch("/orders/:id/status", async (req, res): Promise<void> => {
   try {
-    const params = UpdateOrderStatusParams.safeParse(req.params);
-    if (!params.success) {
-      res.status(400).json({ error: params.error.message });
-      return;
-    }
+    const { id } = req.params;
 
     const parsed = UpdateOrderStatusBody.safeParse(req.body);
     if (!parsed.success) {
@@ -65,7 +57,7 @@ router.patch("/orders/:id/status", async (req, res): Promise<void> => {
     const [order] = await db
       .update(ordersTable)
       .set({ status: parsed.data.status })
-      .where(eq(ordersTable.id, params.data.id))
+      .where(eq(ordersTable.id, id))
       .returning();
 
     if (!order) {
@@ -73,7 +65,7 @@ router.patch("/orders/:id/status", async (req, res): Promise<void> => {
       return;
     }
 
-    res.json(UpdateOrderStatusResponse.parse(serializeDates(order)));
+    res.json(serializeDates(order));
   } catch (error: any) {
     console.error("[orders] Route error:", req.method, req.path, error?.message);
     res.status(500).json({

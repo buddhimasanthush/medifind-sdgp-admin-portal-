@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Search, Filter, ShoppingCart, Package, Truck, CheckCircle, XCircle, Store } from "lucide-react";
+import { Search, Filter, ShoppingCart, Package, Truck, CheckCircle, XCircle, Store, User, FileText, MapPin } from "lucide-react";
 import { 
   useListOrders, 
   useUpdateOrderStatus,
@@ -29,18 +29,10 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-type ListOrdersStatus = "processing" | "shipped" | "delivered" | "cancelled";
-const OrderStatus = {
-  processing: "processing" as const,
-  shipped: "shipped" as const,
-  delivered: "delivered" as const,
-  cancelled: "cancelled" as const,
-};
-
 export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 300);
-  const [statusFilter, setStatusFilter] = useState<ListOrdersStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<string | "all">("all");
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -53,10 +45,10 @@ export default function OrdersPage() {
   const { data: orders, isLoading } = useListOrders(queryParams);
   const updateStatusMutation = useUpdateOrderStatus();
 
-  const handleUpdateStatus = (id: number, newStatus: string) => {
+  const handleUpdateStatus = (id: string, newStatus: string) => {
     updateStatusMutation.mutate({
       id,
-      data: { status: newStatus as any }
+      data: { status: newStatus }
     }, {
       onSuccess: () => {
         toast({
@@ -76,9 +68,9 @@ export default function OrdersPage() {
   };
 
   const totalOrders = orders?.length || 0;
-  const processingOrders = orders?.filter(o => o.status === OrderStatus.processing).length || 0;
-  const shippedOrders = orders?.filter(o => o.status === OrderStatus.shipped).length || 0;
-  const deliveredOrders = orders?.filter(o => o.status === OrderStatus.delivered).length || 0;
+  const processingOrders = orders?.filter(o => o.status === "processing").length || 0;
+  const shippedOrders = orders?.filter(o => o.status === "shipped").length || 0;
+  const deliveredOrders = orders?.filter(o => o.status === "delivered").length || 0;
 
   return (
     <div className="space-y-6 md:space-y-8 pb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -136,7 +128,7 @@ export default function OrdersPage() {
           <div className="relative w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
-              placeholder="Search by Order ID, Patient, or Pharmacy..." 
+              placeholder="Search by Order ID or Status..." 
               className="pl-9 bg-background w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -153,10 +145,10 @@ export default function OrdersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Orders</SelectItem>
-                <SelectItem value={OrderStatus.processing}>Processing</SelectItem>
-                <SelectItem value={OrderStatus.shipped}>Shipped</SelectItem>
-                <SelectItem value={OrderStatus.delivered}>Delivered</SelectItem>
-                <SelectItem value={OrderStatus.cancelled}>Cancelled</SelectItem>
+                <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="shipped">Shipped</SelectItem>
+                <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -166,27 +158,26 @@ export default function OrdersPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30">
-                <TableHead>Order ID</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Patient & Pharmacy</TableHead>
-                <TableHead>Medications</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead>Current Status</TableHead>
-                <TableHead className="w-[160px]">Update Action</TableHead>
+                <TableHead>Order ID & Date</TableHead>
+                <TableHead>User & Pharmacy</TableHead>
+                <TableHead>Prescription</TableHead>
+                <TableHead className="text-right">Total Price</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-[160px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <TableRow key={i}>
-                    {Array.from({ length: 7 }).map((_, j) => (
+                    {Array.from({ length: 6 }).map((_, j) => (
                       <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : orders?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-48 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="h-48 text-center text-muted-foreground">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <Package className="w-8 h-8 text-muted-foreground/40" />
                       <p>No orders found matching your criteria.</p>
@@ -196,53 +187,83 @@ export default function OrdersPage() {
               ) : (
                 orders?.map((order) => (
                   <TableRow key={order.id} className="group">
-                    <TableCell className="font-mono text-sm font-medium text-primary">
-                      {order.orderId}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                      {format(new Date(order.createdAt), 'MMM d, yyyy')}
-                    </TableCell>
                     <TableCell>
-                      <div className="font-medium text-foreground">{order.patientName}</div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                        <Store className="w-3 h-3" />
-                        {order.pharmacyName}
+                      <div className="flex flex-col">
+                        <span className="font-mono text-xs font-medium text-primary uppercase">
+                          {order.id.split('-')[0]}...
+                        </span>
+                        <span className="text-xs text-muted-foreground mt-1 whitespace-nowrap">
+                          {order.createdAt ? format(new Date(order.createdAt), 'MMM d, yyyy') : "N/A"}
+                        </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm max-w-[200px] truncate" title={order.medications}>
-                      {order.medications}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      ${order.total.toFixed(2)}
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <div className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                          <User className="w-3 h-3 text-muted-foreground" />
+                          <span className="truncate max-w-[150px]" title={order.userId}>{order.userId}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <Store className="w-3 h-3" />
+                          <span className="truncate max-w-[150px]" title={order.pharmacyId}>{order.pharmacyId}</span>
+                        </div>
+                        {order.deliveryAddressId && (
+                           <div className="text-[10px] text-muted-foreground/80 flex items-center gap-1.5">
+                           <MapPin className="w-2.5 h-2.5" />
+                           <span className="truncate max-w-[150px]">Address ID: {order.deliveryAddressId.split('-')[0]}</span>
+                         </div>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
-                      {order.status === OrderStatus.processing && (
-                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20"><Package className="w-3 h-3 mr-1"/> Processing</Badge>
+                      {order.prescriptionUrl ? (
+                         <a 
+                         href={order.prescriptionUrl} 
+                         target="_blank" 
+                         rel="noopener noreferrer"
+                         className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                       >
+                         <FileText className="w-3 h-3" />
+                         View Script
+                       </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No prescription</span>
                       )}
-                      {order.status === OrderStatus.shipped && (
-                        <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-500/20"><Truck className="w-3 h-3 mr-1"/> Shipped</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-foreground">
+                      {order.totalPrice ? `$${Number(order.totalPrice).toFixed(2)}` : "—"}
+                    </TableCell>
+                    <TableCell>
+                      {order.status === "processing" && (
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 whitespace-nowrap"><Package className="w-3 h-3 mr-1"/> Processing</Badge>
                       )}
-                      {order.status === OrderStatus.delivered && (
-                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-500/20"><CheckCircle className="w-3 h-3 mr-1"/> Delivered</Badge>
+                      {order.status === "shipped" && (
+                        <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-500/20 whitespace-nowrap"><Truck className="w-3 h-3 mr-1"/> Shipped</Badge>
                       )}
-                      {order.status === OrderStatus.cancelled && (
-                        <Badge variant="outline" className="bg-rose-500/10 text-rose-700 border-rose-500/20"><XCircle className="w-3 h-3 mr-1"/> Cancelled</Badge>
+                      {order.status === "delivered" && (
+                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-500/20 whitespace-nowrap"><CheckCircle className="w-3 h-3 mr-1"/> Delivered</Badge>
+                      )}
+                      {order.status === "cancelled" && (
+                        <Badge variant="outline" className="bg-rose-500/10 text-rose-700 border-rose-500/20 whitespace-nowrap"><XCircle className="w-3 h-3 mr-1"/> Cancelled</Badge>
+                      )}
+                      {!["processing", "shipped", "delivered", "cancelled"].includes(order.status || "") && (
+                        <Badge variant="outline" className="bg-muted text-muted-foreground uppercase text-[10px]">{order.status || "Unknown"}</Badge>
                       )}
                     </TableCell>
                     <TableCell>
                       <Select 
-                        defaultValue={order.status}
+                        defaultValue={order.status || "processing"}
                         onValueChange={(val) => handleUpdateStatus(order.id, val)}
                         disabled={updateStatusMutation.isPending}
                       >
-                        <SelectTrigger className="h-8 text-xs bg-background">
+                        <SelectTrigger className="h-8 text-[11px] bg-background">
                           <SelectValue placeholder="Update Status" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={OrderStatus.processing}>Processing</SelectItem>
-                          <SelectItem value={OrderStatus.shipped}>Shipped</SelectItem>
-                          <SelectItem value={OrderStatus.delivered}>Delivered</SelectItem>
-                          <SelectItem value={OrderStatus.cancelled}>Cancelled</SelectItem>
+                          <SelectItem value="processing">Processing</SelectItem>
+                          <SelectItem value="shipped">Shipped</SelectItem>
+                          <SelectItem value="delivered">Delivered</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>

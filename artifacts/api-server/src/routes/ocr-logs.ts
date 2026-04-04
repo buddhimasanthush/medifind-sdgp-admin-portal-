@@ -2,7 +2,6 @@ import { Router, type IRouter } from "express";
 import { db, ocrLogsTable, ilike, or, eq } from "@workspace/db";
 import {
   ListOcrLogsQueryParams,
-  ListOcrLogsResponse,
 } from "@workspace/api-zod";
 import { serializeDatesArray } from "../lib/serialize.js";
 
@@ -26,16 +25,14 @@ router.get("/ocr-logs", async (req, res): Promise<void> => {
       const term = `%${query.data.search}%`;
       rows = rows.where(
         or(
-          ilike(ocrLogsTable.medicationName, term),
-          ilike(ocrLogsTable.pharmacyName, term),
-          ilike(ocrLogsTable.patientName, term),
-          ilike(ocrLogsTable.prescriptionId, term)
+          ilike(ocrLogsTable.id, term),
+          ilike(ocrLogsTable.status, term)
         )
       );
     }
 
     const results = await rows.orderBy(ocrLogsTable.createdAt);
-    res.json(ListOcrLogsResponse.parse(serializeDatesArray(results)));
+    res.json(serializeDatesArray(results));
   } catch (error: any) {
     console.error("[ocr-logs] Route error:", req.method, req.path, error?.message);
     res.status(500).json({

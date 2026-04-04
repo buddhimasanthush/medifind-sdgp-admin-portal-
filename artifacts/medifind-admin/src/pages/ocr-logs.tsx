@@ -1,17 +1,14 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { Search, Filter, FileScan, CheckCircle2, AlertTriangle, AlertCircle, ScanText } from "lucide-react";
+import { Search, Filter, FileScan, CheckCircle2, AlertTriangle, AlertCircle, ScanText, User, Timer } from "lucide-react";
 import { 
   useListOcrLogs, 
-  type ListOcrLogsStatus,
-  OcrLogStatus
 } from "@workspace/api-client-react";
 import { useDebounce } from "@/hooks/use-debounce";
 
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
 import {
   Table,
   TableBody,
@@ -32,7 +29,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function OcrLogsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 300);
-  const [statusFilter, setStatusFilter] = useState<ListOcrLogsStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<string | "all">("all");
   
   const queryParams = {
     search: debouncedSearch || undefined,
@@ -42,11 +39,9 @@ export default function OcrLogsPage() {
   const { data: logs, isLoading } = useListOcrLogs(queryParams);
 
   const totalScans = logs?.length || 0;
-  const successScans = logs?.filter(l => l.status === OcrLogStatus.success).length || 0;
-  const fallbackScans = logs?.filter(l => l.status === OcrLogStatus.manual_fallback).length || 0;
-  const failedScans = logs?.filter(l => l.status === OcrLogStatus.failed).length || 0;
-
-  const successRate = totalScans > 0 ? Math.round((successScans / totalScans) * 100) : 0;
+  const successScans = logs?.filter(l => l.status === "success").length || 0;
+  const fallbackScans = logs?.filter(l => l.status === "manual_fallback").length || 0;
+  const failedScans = logs?.filter(l => l.status === "failed").length || 0;
 
   return (
     <div className="space-y-6 md:space-y-8 pb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -61,53 +56,43 @@ export default function OcrLogsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="hover-elevate transition-all border-border/50 flex flex-col justify-center">
+        <Card className="hover-elevate transition-all border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Overall Success Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Scans</CardTitle>
             <ScanText className="w-4 h-4 text-primary" />
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-10 w-full" />
-            ) : (
-              <>
-                <div className="text-3xl font-bold text-primary mb-2">{successRate}%</div>
-                <Progress value={successRate} className="h-2" />
-              </>
-            )}
+            <div className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-16" /> : totalScans}</div>
           </CardContent>
         </Card>
         
         <Card className="hover-elevate transition-all border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Automated Success</CardTitle>
+            <CardTitle className="text-sm font-medium">Success</CardTitle>
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-emerald-600">{isLoading ? <Skeleton className="h-8 w-16" /> : successScans}</div>
-            <p className="text-xs text-muted-foreground mt-1">High confidence extractions</p>
           </CardContent>
         </Card>
 
-        <Card className="hover-elevate transition-all border-border/50 border-l-4 border-l-amber-400">
+        <Card className="hover-elevate transition-all border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">Manual Fallback</CardTitle>
             <AlertTriangle className="w-4 h-4 text-amber-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-amber-600">{isLoading ? <Skeleton className="h-8 w-16" /> : fallbackScans}</div>
-            <p className="text-xs text-muted-foreground mt-1">Required pharmacist review</p>
           </CardContent>
         </Card>
 
         <Card className="hover-elevate transition-all border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Failed Scans</CardTitle>
+            <CardTitle className="text-sm font-medium">Failed</CardTitle>
             <AlertCircle className="w-4 h-4 text-rose-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-rose-600">{isLoading ? <Skeleton className="h-8 w-16" /> : failedScans}</div>
-            <p className="text-xs text-muted-foreground mt-1">Unreadable documents</p>
           </CardContent>
         </Card>
       </div>
@@ -117,7 +102,7 @@ export default function OcrLogsPage() {
           <div className="relative w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
-              placeholder="Search by Rx ID, medication, or pharmacy..." 
+              placeholder="Search by ID or Status..." 
               className="pl-9 bg-background w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -134,9 +119,9 @@ export default function OcrLogsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Scans</SelectItem>
-                <SelectItem value={OcrLogStatus.success}>Success</SelectItem>
-                <SelectItem value={OcrLogStatus.manual_fallback}>Manual Fallback</SelectItem>
-                <SelectItem value={OcrLogStatus.failed}>Failed</SelectItem>
+                <SelectItem value="success">Success</SelectItem>
+                <SelectItem value="manual_fallback">Manual Fallback</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -146,27 +131,25 @@ export default function OcrLogsPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30">
-                <TableHead>Rx ID</TableHead>
-                <TableHead>Medication</TableHead>
-                <TableHead>Pharmacy & Patient</TableHead>
+                <TableHead>Scan ID</TableHead>
+                <TableHead>User ID</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="w-[150px]">AI Confidence</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead className="text-right">Details</TableHead>
+                <TableHead>Processing Time</TableHead>
+                <TableHead>Timestamp</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <TableRow key={i}>
-                    {Array.from({ length: 7 }).map((_, j) => (
+                    {Array.from({ length: 5 }).map((_, j) => (
                       <TableCell key={j}><Skeleton className="h-5 w-full max-w-[120px]" /></TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : logs?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-48 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="h-48 text-center text-muted-foreground">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <FileScan className="w-8 h-8 text-muted-foreground/40" />
                       <p>No OCR logs found matching your criteria.</p>
@@ -176,53 +159,37 @@ export default function OcrLogsPage() {
               ) : (
                 logs?.map((log) => (
                   <TableRow key={log.id} className="group hover:bg-muted/10 transition-colors">
-                    <TableCell className="font-mono text-sm text-foreground">
-                      {log.prescriptionId}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {log.medicationName}
+                    <TableCell className="font-mono text-[11px] text-foreground">
+                      {log.id}
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm font-medium">{log.pharmacyName}</div>
-                      <div className="text-xs text-muted-foreground">Pt: {log.patientName}</div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <User className="w-3.5 h-3.5" />
+                        <span className="truncate max-w-[120px]" title={log.userId}>{log.userId || "Anonymous"}</span>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      {log.status === OcrLogStatus.success && (
+                      {log.status === "success" && (
                         <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-500/20">Success</Badge>
                       )}
-                      {log.status === OcrLogStatus.manual_fallback && (
+                      {log.status === "manual_fallback" && (
                         <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-500/20">Manual Fallback</Badge>
                       )}
-                      {log.status === OcrLogStatus.failed && (
+                      {log.status === "failed" && (
                         <Badge variant="outline" className="bg-rose-500/10 text-rose-700 border-rose-500/20">Failed</Badge>
+                      )}
+                      {!["success", "manual_fallback", "failed"].includes(log.status || "") && (
+                        <Badge variant="outline" className="capitalize">{log.status || "Unknown"}</Badge>
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-muted-foreground">{log.confidence}%</span>
-                        </div>
-                        <Progress 
-                          value={log.confidence} 
-                          className={`h-1.5 ${
-                            log.confidence > 90 ? '[&>div]:bg-emerald-500' : 
-                            log.confidence > 70 ? '[&>div]:bg-amber-500' : 
-                            '[&>div]:bg-rose-500'
-                          }`} 
-                        />
+                       <div className="flex items-center gap-2 text-sm">
+                        <Timer className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span>{log.processingTimeMs ? `${log.processingTimeMs}ms` : "—"}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                      {format(new Date(log.scannedAt), 'MMM d, h:mm a')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {log.errorReason ? (
-                        <span className="text-xs text-rose-600 font-medium bg-rose-50 px-2 py-1 rounded-md border border-rose-100">
-                          {log.errorReason}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">--</span>
-                      )}
+                      {log.createdAt ? format(new Date(log.createdAt), 'MMM d, h:mm a') : "—"}
                     </TableCell>
                   </TableRow>
                 ))

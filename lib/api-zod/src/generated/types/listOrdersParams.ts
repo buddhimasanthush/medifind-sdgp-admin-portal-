@@ -5,9 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { ListOrdersStatus } from "./listOrdersStatus";
 
 export type ListOrdersParams = {
-  status?: ListOrdersStatus;
+  status?: string;
   search?: string;
 };

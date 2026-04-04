@@ -7,28 +7,24 @@ const isPostgres = () =>
   (process.env.SUPABASE_DB_URL && process.env.SUPABASE_DB_URL.trim() !== "") || 
   (process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith("postgres") || process.env.DATABASE_URL.includes("supabase")));
 
-export const adminsTable = (isPostgres()
-  ? pgTable("admins", {
+export const medicinesTable = (isPostgres()
+  ? pgTable("medicines", {
       id: pgText("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-      username: pgText("username").unique(),
-      employeeId: pgText("employee_id").unique(),
-      status: pgText("status"),
-      otp: pgText("otp"),
-      otpExpiresAt: pgTimestamp("otp_expires_at", { withTimezone: true }),
+      name: pgText("name"),
+      category: pgText("category"),
+      description: pgText("description"),
       createdAt: pgTimestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     })
-  : sqliteTable("admins", {
+  : sqliteTable("medicines", {
       id: sqliteText("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-      username: sqliteText("username").unique(),
-      employeeId: sqliteText("employee_id").unique(),
-      status: sqliteText("status"),
-      otp: sqliteText("otp"),
-      otpExpiresAt: sqliteInteger("otp_expires_at", { mode: "timestamp" }),
+      name: sqliteText("name"),
+      category: sqliteText("category"),
+      description: sqliteText("description"),
       createdAt: sqliteInteger("created_at", { mode: "timestamp" }).notNull().defaultNow(),
     })) as any;
 
-export const insertAdminSchema = createInsertSchema(adminsTable);
-export const selectAdminSchema = createSelectSchema(adminsTable);
+export const insertMedicineSchema = createInsertSchema(medicinesTable);
+export const selectMedicineSchema = createSelectSchema(medicinesTable);
 
-export type InsertAdmin = z.infer<typeof insertAdminSchema>;
-export type Admin = z.infer<typeof selectAdminSchema>;
+export type InsertMedicine = z.infer<typeof insertMedicineSchema>;
+export type Medicine = z.infer<typeof selectMedicineSchema>;

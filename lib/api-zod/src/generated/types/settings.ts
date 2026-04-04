@@ -7,7 +7,7 @@
  */
 
 export interface Settings {
-  id: number;
+  id: string;
   platformName: string;
   supportEmail: string;
   ocrConfidenceThreshold: number;

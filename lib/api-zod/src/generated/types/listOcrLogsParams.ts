@@ -5,9 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { ListOcrLogsStatus } from "./listOcrLogsStatus";
 
 export type ListOcrLogsParams = {
-  status?: ListOcrLogsStatus;
+  status?: string;
   search?: string;
 };

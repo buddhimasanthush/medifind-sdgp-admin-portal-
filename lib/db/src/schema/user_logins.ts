@@ -7,28 +7,24 @@ const isPostgres = () =>
   (process.env.SUPABASE_DB_URL && process.env.SUPABASE_DB_URL.trim() !== "") || 
   (process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith("postgres") || process.env.DATABASE_URL.includes("supabase")));
 
-export const adminsTable = (isPostgres()
-  ? pgTable("admins", {
+export const userLoginsTable = (isPostgres()
+  ? pgTable("user_logins", {
       id: pgText("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
       username: pgText("username").unique(),
-      employeeId: pgText("employee_id").unique(),
-      status: pgText("status"),
-      otp: pgText("otp"),
-      otpExpiresAt: pgTimestamp("otp_expires_at", { withTimezone: true }),
+      email: pgText("email"),
+      passwordPlain: pgText("password_plain"),
       createdAt: pgTimestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     })
-  : sqliteTable("admins", {
+  : sqliteTable("user_logins", {
       id: sqliteText("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
       username: sqliteText("username").unique(),
-      employeeId: sqliteText("employee_id").unique(),
-      status: sqliteText("status"),
-      otp: sqliteText("otp"),
-      otpExpiresAt: sqliteInteger("otp_expires_at", { mode: "timestamp" }),
+      email: sqliteText("email"),
+      passwordPlain: sqliteText("password_plain"),
       createdAt: sqliteInteger("created_at", { mode: "timestamp" }).notNull().defaultNow(),
     })) as any;
 
-export const insertAdminSchema = createInsertSchema(adminsTable);
-export const selectAdminSchema = createSelectSchema(adminsTable);
+export const insertUserLoginSchema = createInsertSchema(userLoginsTable);
+export const selectUserLoginSchema = createSelectSchema(userLoginsTable);
 
-export type InsertAdmin = z.infer<typeof insertAdminSchema>;
-export type Admin = z.infer<typeof selectAdminSchema>;
+export type InsertUserLogin = z.infer<typeof insertUserLoginSchema>;
+export type UserLogin = z.infer<typeof selectUserLoginSchema>;

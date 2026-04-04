@@ -246,7 +246,7 @@ router.get("/me", async (req, res) => {
     return;
   }
 
-  const [admin] = await (db as any).select().from(adminsTable as any).where(eq(adminsTable.id as any, parseInt(adminId))) as any[];
+  const [admin] = await (db as any).select().from(adminsTable as any).where(eq(adminsTable.id as any, adminId)) as any[];
   if (!admin) {
     res.status(401).json({ error: "Admin not found" });
     return;
@@ -273,7 +273,7 @@ router.post("/approve", async (req, res) => {
     const [updatedAdmin] = await db
       .update(adminsTable)
       .set({ status: dbStatus })
-      .where(eq(adminsTable.id, parseInt(targetAdminId)))
+      .where(eq(adminsTable.id, targetAdminId))
       .returning();
 
     if (!updatedAdmin) {

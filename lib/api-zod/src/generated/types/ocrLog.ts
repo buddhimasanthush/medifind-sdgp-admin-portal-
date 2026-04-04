@@ -5,18 +5,11 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { OcrLogStatus } from "./ocrLogStatus";
 
 export interface OcrLog {
-  id: number;
-  prescriptionId: string;
-  medicationName: string;
-  pharmacyName: string;
-  patientName: string;
-  status: OcrLogStatus;
-  confidence: number;
-  /** @nullable */
-  errorReason: string | null;
-  scannedAt: string;
+  id: string;
+  userId?: string;
+  status: string;
+  processingTimeMs?: number;
   createdAt: string;
 }

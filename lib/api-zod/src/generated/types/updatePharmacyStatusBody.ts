@@ -5,8 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { UpdatePharmacyStatusBodyStatus } from "./updatePharmacyStatusBodyStatus";
 
 export interface UpdatePharmacyStatusBody {
-  status: UpdatePharmacyStatusBodyStatus;
+  status: string;
 }

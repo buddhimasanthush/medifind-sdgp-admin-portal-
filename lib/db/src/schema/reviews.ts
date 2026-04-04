@@ -1,39 +1,34 @@
-import { sqliteTable, text as sqliteText, integer as sqliteInteger, real as sqliteReal } from "drizzle-orm/sqlite-core";
-import { pgTable, text as pgText, timestamp as pgTimestamp, numeric as pgNumeric } from "drizzle-orm/pg-core";
+import { sqliteTable, text as sqliteText, integer as sqliteInteger } from "drizzle-orm/sqlite-core";
+import { pgTable, text as pgText, integer as pgInteger, timestamp as pgTimestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { profilesTable } from "./profiles";
 import { pharmaciesTable } from "./pharmacies";
-import { userAddressesTable } from "./user_addresses";
 
 const isPostgres = () => 
   (process.env.SUPABASE_DB_URL && process.env.SUPABASE_DB_URL.trim() !== "") || 
   (process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith("postgres") || process.env.DATABASE_URL.includes("supabase")));
 
-export const ordersTable = (isPostgres()
-  ? pgTable("orders", {
+export const reviewsTable = (isPostgres()
+  ? pgTable("reviews", {
       id: pgText("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
       userId: pgText("user_id").references(() => profilesTable.id).notNull(),
       pharmacyId: pgText("pharmacy_id").references(() => pharmaciesTable.id).notNull(),
-      deliveryAddressId: pgText("delivery_address_id").references(() => userAddressesTable.id),
-      status: pgText("status"),
-      totalPrice: pgNumeric("total_price"),
-      prescriptionUrl: pgText("prescription_url"),
+      rating: pgInteger("rating"), // constraint 1 to 5 handled in zod
+      comment: pgText("comment"),
       createdAt: pgTimestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     })
-  : sqliteTable("orders", {
+  : sqliteTable("reviews", {
       id: sqliteText("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
       userId: sqliteText("user_id").references(() => profilesTable.id).notNull(),
       pharmacyId: sqliteText("pharmacy_id").references(() => pharmaciesTable.id).notNull(),
-      deliveryAddressId: sqliteText("delivery_address_id").references(() => userAddressesTable.id),
-      status: sqliteText("status"),
-      totalPrice: sqliteReal("total_price"),
-      prescriptionUrl: sqliteText("prescription_url"),
+      rating: sqliteInteger("rating"),
+      comment: sqliteText("comment"),
       createdAt: sqliteInteger("created_at", { mode: "timestamp" }).notNull().defaultNow(),
     })) as any;
 
-export const insertOrderSchema = createInsertSchema(ordersTable);
-export const selectOrderSchema = createSelectSchema(ordersTable);
+export const insertReviewSchema = createInsertSchema(reviewsTable);
+export const selectReviewSchema = createSelectSchema(reviewsTable);
 
-export type InsertOrder = z.infer<typeof insertOrderSchema>;
-export type Order = z.infer<typeof selectOrderSchema>;
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type Review = z.infer<typeof selectReviewSchema>;

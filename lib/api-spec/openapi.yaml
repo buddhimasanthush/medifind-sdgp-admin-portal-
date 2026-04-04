@@ -11,8 +11,6 @@ tags:
     description: Health operations
   - name: pharmacies
     description: Pharmacy management
-  - name: patients
-    description: Patient management
   - name: ocr-logs
     description: AI/OCR scan logs
   - name: orders
@@ -40,12 +38,6 @@ paths:
       tags: [pharmacies]
       summary: List all pharmacies
       parameters:
-        - name: status
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [pending, approved, rejected]
         - name: search
           in: query
           required: false
@@ -88,7 +80,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Pharmacy details
@@ -96,123 +88,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Pharmacy"
-        "404":
-          description: Not found
-
-  /pharmacies/{id}/status:
-    patch:
-      operationId: updatePharmacyStatus
-      tags: [pharmacies]
-      summary: Update pharmacy status (approve or reject)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdatePharmacyStatusBody"
-      responses:
-        "200":
-          description: Updated pharmacy
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Pharmacy"
-        "404":
-          description: Not found
-
-  /patients:
-    get:
-      operationId: listPatients
-      tags: [patients]
-      summary: List all patients
-      parameters:
-        - name: status
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [active, inactive]
-        - name: search
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: List of patients
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Patient"
-    post:
-      operationId: createPatient
-      tags: [patients]
-      summary: Create a patient
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreatePatientBody"
-      responses:
-        "201":
-          description: Created patient
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Patient"
-
-  /patients/{id}:
-    get:
-      operationId: getPatient
-      tags: [patients]
-      summary: Get a patient by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Patient details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Patient"
-        "404":
-          description: Not found
-    patch:
-      operationId: updatePatient
-      tags: [patients]
-      summary: Update a patient
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdatePatientBody"
-      responses:
-        "200":
-          description: Updated patient
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Patient"
         "404":
           description: Not found
 
@@ -227,7 +102,6 @@ paths:
           required: false
           schema:
             type: string
-            enum: [success, manual_fallback, failed]
         - name: search
           in: query
           required: false
@@ -254,7 +128,6 @@ paths:
           required: false
           schema:
             type: string
-            enum: [processing, shipped, delivered, cancelled]
         - name: search
           in: query
           required: false
@@ -280,7 +153,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -341,254 +214,110 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
         name:
           type: string
-        registrationNumber:
+        address:
           type: string
-        location:
-          type: string
-        contactEmail:
-          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
         phone:
           type: string
-        licenseExpiry:
+        openingHours:
           type: string
-        username:
+        externalUrl:
           type: string
-        passwordHash:
-          type: string
-        status:
-          type: string
-          enum: [pending, approved, rejected]
-        dateApplied:
+        externalKey:
           type: string
         createdAt:
-          type: string
-        updatedAt:
           type: string
       required:
         - id
         - name
-        - registrationNumber
-        - location
-        - contactEmail
-        - phone
-        - licenseExpiry
-        - status
-        - dateApplied
-        - username
-        - passwordHash
+        - address
         - createdAt
-        - updatedAt
 
     CreatePharmacyBody:
       type: object
       properties:
         name:
           type: string
-        registrationNumber:
+        address:
           type: string
-        location:
-          type: string
-        contactEmail:
-          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
         phone:
           type: string
-        licenseExpiry:
+        openingHours:
           type: string
-        dateApplied:
+        externalUrl:
           type: string
-        username:
-          type: string
-        password:
+        externalKey:
           type: string
       required:
         - name
-        - registrationNumber
-        - location
-        - contactEmail
-        - phone
-        - licenseExpiry
-        - dateApplied
-        - username
-        - password
+        - address
 
     UpdatePharmacyStatusBody:
       type: object
       properties:
         status:
           type: string
-          enum: [approved, rejected]
       required:
         - status
-
-    Patient:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        email:
-          type: string
-        phone:
-          type: string
-        dateOfBirth:
-          type: string
-        address:
-          type: string
-        prescriptionCount:
-          type: integer
-        lastVisit:
-          type: string
-        status:
-          type: string
-          enum: [active, inactive]
-        username:
-          type: string
-        passwordHash:
-          type: string
-        createdAt:
-          type: string
-        updatedAt:
-          type: string
-      required:
-        - id
-        - name
-        - email
-        - phone
-        - dateOfBirth
-        - address
-        - prescriptionCount
-        - lastVisit
-        - status
-        - username
-        - passwordHash
-        - createdAt
-        - updatedAt
-
-    CreatePatientBody:
-      type: object
-      properties:
-        name:
-          type: string
-        email:
-          type: string
-        phone:
-          type: string
-        dateOfBirth:
-          type: string
-        address:
-          type: string
-        lastVisit:
-          type: string
-        username:
-          type: string
-        password:
-          type: string
-      required:
-        - name
-        - email
-        - phone
-        - dateOfBirth
-        - address
-        - lastVisit
-        - username
-        - password
-
-    UpdatePatientBody:
-      type: object
-      properties:
-        name:
-          type: string
-        email:
-          type: string
-        phone:
-          type: string
-        address:
-          type: string
-        status:
-          type: string
-          enum: [active, inactive]
-        lastVisit:
-          type: string
 
     OcrLog:
       type: object
       properties:
         id:
-          type: integer
-        prescriptionId:
           type: string
-        medicationName:
-          type: string
-        pharmacyName:
-          type: string
-        patientName:
+        userId:
           type: string
         status:
           type: string
-          enum: [success, manual_fallback, failed]
-        confidence:
-          type: number
-        errorReason:
-          type: ["string", "null"]
-        scannedAt:
-          type: string
+        processingTimeMs:
+          type: integer
         createdAt:
           type: string
       required:
         - id
-        - prescriptionId
-        - medicationName
-        - pharmacyName
-        - patientName
         - status
-        - confidence
-        - errorReason
-        - scannedAt
         - createdAt
 
     Order:
       type: object
       properties:
         id:
-          type: integer
-        orderId:
           type: string
-        patientName:
+        userId:
           type: string
-        pharmacyName:
+        pharmacyId:
           type: string
-        medications:
+        deliveryAddressId:
           type: string
         status:
           type: string
-          enum: [processing, shipped, delivered, cancelled]
-        total:
+        totalPrice:
           type: number
-        createdAt:
+        prescriptionUrl:
           type: string
-        updatedAt:
+        createdAt:
           type: string
       required:
         - id
-        - orderId
-        - patientName
-        - pharmacyName
-        - medications
-        - status
-        - total
+        - userId
+        - pharmacyId
         - createdAt
-        - updatedAt
 
     UpdateOrderStatusBody:
       type: object
       properties:
         status:
           type: string
-          enum: [processing, shipped, delivered, cancelled]
       required:
         - status
 
@@ -596,7 +325,7 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
         platformName:
           type: string
         supportEmail:

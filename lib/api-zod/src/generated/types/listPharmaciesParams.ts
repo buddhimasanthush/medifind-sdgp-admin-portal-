@@ -5,9 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { ListPharmaciesStatus } from "./listPharmaciesStatus";
 
 export type ListPharmaciesParams = {
-  status?: ListPharmaciesStatus;
   search?: string;
 };

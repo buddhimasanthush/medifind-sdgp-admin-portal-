@@ -19,24 +19,20 @@ export const HealthCheckResponse = zod.object({
  * @summary List all pharmacies
  */
 export const ListPharmaciesQueryParams = zod.object({
-  status: zod.enum(["pending", "approved", "rejected"]).optional(),
   search: zod.coerce.string().optional(),
 });
 
 export const ListPharmaciesResponseItem = zod.object({
-  id: zod.number(),
+  id: zod.string(),
   name: zod.string(),
-  registrationNumber: zod.string(),
-  location: zod.string(),
-  contactEmail: zod.string(),
-  phone: zod.string(),
-  licenseExpiry: zod.string(),
-  username: zod.string(),
-  passwordHash: zod.string(),
-  status: zod.enum(["pending", "approved", "rejected"]),
-  dateApplied: zod.string(),
+  address: zod.string(),
+  latitude: zod.number().optional(),
+  longitude: zod.number().optional(),
+  phone: zod.string().optional(),
+  openingHours: zod.string().optional(),
+  externalUrl: zod.string().optional(),
+  externalKey: zod.string().optional(),
   createdAt: zod.string(),
-  updatedAt: zod.string(),
 });
 export const ListPharmaciesResponse = zod.array(ListPharmaciesResponseItem);
 
@@ -45,178 +41,48 @@ export const ListPharmaciesResponse = zod.array(ListPharmaciesResponseItem);
  */
 export const CreatePharmacyBody = zod.object({
   name: zod.string(),
-  registrationNumber: zod.string(),
-  location: zod.string(),
-  contactEmail: zod.string(),
-  phone: zod.string(),
-  licenseExpiry: zod.string(),
-  dateApplied: zod.string(),
-  username: zod.string(),
-  password: zod.string(),
+  address: zod.string(),
+  latitude: zod.number().optional(),
+  longitude: zod.number().optional(),
+  phone: zod.string().optional(),
+  openingHours: zod.string().optional(),
+  externalUrl: zod.string().optional(),
+  externalKey: zod.string().optional(),
 });
 
 /**
  * @summary Get a pharmacy by ID
  */
 export const GetPharmacyParams = zod.object({
-  id: zod.coerce.number(),
+  id: zod.coerce.string(),
 });
 
 export const GetPharmacyResponse = zod.object({
-  id: zod.number(),
+  id: zod.string(),
   name: zod.string(),
-  registrationNumber: zod.string(),
-  location: zod.string(),
-  contactEmail: zod.string(),
-  phone: zod.string(),
-  licenseExpiry: zod.string(),
-  username: zod.string(),
-  passwordHash: zod.string(),
-  status: zod.enum(["pending", "approved", "rejected"]),
-  dateApplied: zod.string(),
-  createdAt: zod.string(),
-  updatedAt: zod.string(),
-});
-
-/**
- * @summary Update pharmacy status (approve or reject)
- */
-export const UpdatePharmacyStatusParams = zod.object({
-  id: zod.coerce.number(),
-});
-
-export const UpdatePharmacyStatusBody = zod.object({
-  status: zod.enum(["approved", "rejected"]),
-});
-
-export const UpdatePharmacyStatusResponse = zod.object({
-  id: zod.number(),
-  name: zod.string(),
-  registrationNumber: zod.string(),
-  location: zod.string(),
-  contactEmail: zod.string(),
-  phone: zod.string(),
-  licenseExpiry: zod.string(),
-  username: zod.string(),
-  passwordHash: zod.string(),
-  status: zod.enum(["pending", "approved", "rejected"]),
-  dateApplied: zod.string(),
-  createdAt: zod.string(),
-  updatedAt: zod.string(),
-});
-
-/**
- * @summary List all patients
- */
-export const ListPatientsQueryParams = zod.object({
-  status: zod.enum(["active", "inactive"]).optional(),
-  search: zod.coerce.string().optional(),
-});
-
-export const ListPatientsResponseItem = zod.object({
-  id: zod.number(),
-  name: zod.string(),
-  email: zod.string(),
-  phone: zod.string(),
-  dateOfBirth: zod.string(),
   address: zod.string(),
-  prescriptionCount: zod.number(),
-  lastVisit: zod.string(),
-  username: zod.string(),
-  passwordHash: zod.string(),
-  status: zod.enum(["active", "inactive"]),
-  createdAt: zod.string(),
-  updatedAt: zod.string(),
-});
-export const ListPatientsResponse = zod.array(ListPatientsResponseItem);
-
-/**
- * @summary Create a patient
- */
-export const CreatePatientBody = zod.object({
-  name: zod.string(),
-  email: zod.string(),
-  phone: zod.string(),
-  dateOfBirth: zod.string(),
-  address: zod.string(),
-  lastVisit: zod.string(),
-  username: zod.string(),
-  password: zod.string(),
-});
-
-/**
- * @summary Get a patient by ID
- */
-export const GetPatientParams = zod.object({
-  id: zod.coerce.number(),
-});
-
-export const GetPatientResponse = zod.object({
-  id: zod.number(),
-  name: zod.string(),
-  email: zod.string(),
-  phone: zod.string(),
-  dateOfBirth: zod.string(),
-  address: zod.string(),
-  prescriptionCount: zod.number(),
-  lastVisit: zod.string(),
-  username: zod.string(),
-  passwordHash: zod.string(),
-  status: zod.enum(["active", "inactive"]),
-  createdAt: zod.string(),
-  updatedAt: zod.string(),
-});
-
-/**
- * @summary Update a patient
- */
-export const UpdatePatientParams = zod.object({
-  id: zod.coerce.number(),
-});
-
-export const UpdatePatientBody = zod.object({
-  name: zod.string().optional(),
-  email: zod.string().optional(),
+  latitude: zod.number().optional(),
+  longitude: zod.number().optional(),
   phone: zod.string().optional(),
-  address: zod.string().optional(),
-  status: zod.enum(["active", "inactive"]).optional(),
-  lastVisit: zod.string().optional(),
-});
-
-export const UpdatePatientResponse = zod.object({
-  id: zod.number(),
-  name: zod.string(),
-  email: zod.string(),
-  phone: zod.string(),
-  dateOfBirth: zod.string(),
-  address: zod.string(),
-  prescriptionCount: zod.number(),
-  lastVisit: zod.string(),
-  username: zod.string(),
-  passwordHash: zod.string(),
-  status: zod.enum(["active", "inactive"]),
+  openingHours: zod.string().optional(),
+  externalUrl: zod.string().optional(),
+  externalKey: zod.string().optional(),
   createdAt: zod.string(),
-  updatedAt: zod.string(),
 });
 
 /**
  * @summary List AI/OCR scan logs
  */
 export const ListOcrLogsQueryParams = zod.object({
-  status: zod.enum(["success", "manual_fallback", "failed"]).optional(),
+  status: zod.coerce.string().optional(),
   search: zod.coerce.string().optional(),
 });
 
 export const ListOcrLogsResponseItem = zod.object({
-  id: zod.number(),
-  prescriptionId: zod.string(),
-  medicationName: zod.string(),
-  pharmacyName: zod.string(),
-  patientName: zod.string(),
-  status: zod.enum(["success", "manual_fallback", "failed"]),
-  confidence: zod.number(),
-  errorReason: zod.string().nullable(),
-  scannedAt: zod.string(),
+  id: zod.string(),
+  userId: zod.string().optional(),
+  status: zod.string(),
+  processingTimeMs: zod.number().optional(),
   createdAt: zod.string(),
 });
 export const ListOcrLogsResponse = zod.array(ListOcrLogsResponseItem);
@@ -225,22 +91,19 @@ export const ListOcrLogsResponse = zod.array(ListOcrLogsResponseItem);
  * @summary List all orders
  */
 export const ListOrdersQueryParams = zod.object({
-  status: zod
-    .enum(["processing", "shipped", "delivered", "cancelled"])
-    .optional(),
+  status: zod.coerce.string().optional(),
   search: zod.coerce.string().optional(),
 });
 
 export const ListOrdersResponseItem = zod.object({
-  id: zod.number(),
-  orderId: zod.string(),
-  patientName: zod.string(),
-  pharmacyName: zod.string(),
-  medications: zod.string(),
-  status: zod.enum(["processing", "shipped", "delivered", "cancelled"]),
-  total: zod.number(),
+  id: zod.string(),
+  userId: zod.string(),
+  pharmacyId: zod.string(),
+  deliveryAddressId: zod.string().optional(),
+  status: zod.string().optional(),
+  totalPrice: zod.number().optional(),
+  prescriptionUrl: zod.string().optional(),
   createdAt: zod.string(),
-  updatedAt: zod.string(),
 });
 export const ListOrdersResponse = zod.array(ListOrdersResponseItem);
 
@@ -248,30 +111,29 @@ export const ListOrdersResponse = zod.array(ListOrdersResponseItem);
  * @summary Update order status
  */
 export const UpdateOrderStatusParams = zod.object({
-  id: zod.coerce.number(),
+  id: zod.coerce.string(),
 });
 
 export const UpdateOrderStatusBody = zod.object({
-  status: zod.enum(["processing", "shipped", "delivered", "cancelled"]),
+  status: zod.string(),
 });
 
 export const UpdateOrderStatusResponse = zod.object({
-  id: zod.number(),
-  orderId: zod.string(),
-  patientName: zod.string(),
-  pharmacyName: zod.string(),
-  medications: zod.string(),
-  status: zod.enum(["processing", "shipped", "delivered", "cancelled"]),
-  total: zod.number(),
+  id: zod.string(),
+  userId: zod.string(),
+  pharmacyId: zod.string(),
+  deliveryAddressId: zod.string().optional(),
+  status: zod.string().optional(),
+  totalPrice: zod.number().optional(),
+  prescriptionUrl: zod.string().optional(),
   createdAt: zod.string(),
-  updatedAt: zod.string(),
 });
 
 /**
  * @summary Get platform settings
  */
 export const GetSettingsResponse = zod.object({
-  id: zod.number(),
+  id: zod.string(),
   platformName: zod.string(),
   supportEmail: zod.string(),
   ocrConfidenceThreshold: zod.number(),
@@ -294,7 +156,7 @@ export const UpdateSettingsBody = zod.object({
 });
 
 export const UpdateSettingsResponse = zod.object({
-  id: zod.number(),
+  id: zod.string(),
   platformName: zod.string(),
   supportEmail: zod.string(),
   ocrConfidenceThreshold: zod.number(),

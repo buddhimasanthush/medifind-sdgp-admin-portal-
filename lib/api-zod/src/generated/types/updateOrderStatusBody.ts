@@ -5,8 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { UpdateOrderStatusBodyStatus } from "./updateOrderStatusBodyStatus";
 
 export interface UpdateOrderStatusBody {
-  status: UpdateOrderStatusBodyStatus;
+  status: string;
 }

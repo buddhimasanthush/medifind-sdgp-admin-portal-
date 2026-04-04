@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import AppLayout from "@/components/layout/app-layout";
 import Dashboard from "@/pages/dashboard";
 import PharmaciesPage from "@/pages/pharmacies";
-import PatientsPage from "@/pages/patients";
+
 import OcrLogsPage from "@/pages/ocr-logs";
 import OrdersPage from "@/pages/orders";
 import SettingsPage from "@/pages/settings";
@@ -84,7 +84,7 @@ function Router() {
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/pharmacies" component={PharmaciesPage} />
-            <Route path="/patients" component={PatientsPage} />
+
             <Route path="/logs" component={OcrLogsPage} />
             <Route path="/orders" component={OrdersPage} />
             <Route path="/settings" component={SettingsPage} />

@@ -5,18 +5,16 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { PharmacyStatus } from "./pharmacyStatus";
 
 export interface Pharmacy {
-  id: number;
+  id: string;
   name: string;
-  registrationNumber: string;
-  location: string;
-  contactEmail: string;
-  phone: string;
-  licenseExpiry: string;
-  status: PharmacyStatus;
-  dateApplied: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  phone?: string;
+  openingHours?: string;
+  externalUrl?: string;
+  externalKey?: string;
   createdAt: string;
-  updatedAt: string;
 }

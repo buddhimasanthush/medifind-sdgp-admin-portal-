@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, ordersTable, patientsTable, ocrLogsTable, pharmaciesTable, sql, eq, sum } from "@workspace/db";
+import { db, ordersTable, profilesTable, ocrLogsTable, pharmaciesTable, sql, eq, sum } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -8,11 +8,11 @@ router.get("/stats", async (req, res) => {
     const dba = db as any;
 
     // 1. Total Revenue
-    const [revenueRes] = await dba.select({ value: sum(ordersTable.total) }).from(ordersTable);
+    const [revenueRes] = await dba.select({ value: sum(ordersTable.totalPrice) }).from(ordersTable);
     const totalRevenue = Number(revenueRes?.value || 0);
 
     // 2. Active Patients
-    const [patientsRes] = await dba.select({ value: sql<number>`count(*)` }).from(patientsTable).where(eq(patientsTable.status, "active"));
+    const [patientsRes] = await dba.select({ value: sql<number>`count(*)` }).from(profilesTable).where(eq(profilesTable.hasCompletedOnboarding, true));
     const activePatients = Number(patientsRes?.value || 0);
 
     // 3. OCR Success Rate
@@ -23,13 +23,12 @@ router.get("/stats", async (req, res) => {
     const successScans = Number(successScansRes?.value || 0);
     const ocrSuccessRate = totalScans > 0 ? (successScans / totalScans) * 100 : 0;
 
-    // 4. Pending Pharmacies
-    const [pendingPharmaciesRes] = await dba.select({ value: sql<number>`count(*)` }).from(pharmaciesTable).where(eq(pharmaciesTable.status, "pending"));
-    const pendingPharmacies = Number(pendingPharmaciesRes?.value || 0);
+    // 4. Pending Pharmacies (Removed as status no longer exists)
+    const pendingPharmacies = 0;
 
     // 5. Total counts for dashboard
     const [totalPharmaciesRes] = await dba.select({ value: sql<number>`count(*)` }).from(pharmaciesTable);
-    const [totalPatientsRes] = await dba.select({ value: sql<number>`count(*)` }).from(patientsTable);
+    const [totalPatientsRes] = await dba.select({ value: sql<number>`count(*)` }).from(profilesTable);
     const [totalOrdersRes] = await dba.select({ value: sql<number>`count(*)` }).from(ordersTable);
     const [totalOcrLogsRes] = await dba.select({ value: sql<number>`count(*)` }).from(ocrLogsTable);
 
@@ -44,7 +43,7 @@ router.get("/stats", async (req, res) => {
 
     const chartRes = await dba.select({
       month: monthSql,
-      revenue: sum(ordersTable.total)
+      revenue: sum(ordersTable.totalPrice)
     })
     .from(ordersTable)
     .groupBy(monthSql)

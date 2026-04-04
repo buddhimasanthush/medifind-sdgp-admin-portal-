@@ -9,157 +9,59 @@ export interface HealthStatus {
   status: string;
 }
 
-export type PharmacyStatus =
-  (typeof PharmacyStatus)[keyof typeof PharmacyStatus];
-
-export const PharmacyStatus = {
-  pending: "pending",
-  approved: "approved",
-  rejected: "rejected",
-} as const;
-
 export interface Pharmacy {
-  id: number;
+  id: string;
   name: string;
-  registrationNumber: string;
-  location: string;
-  contactEmail: string;
-  phone: string;
-  licenseExpiry: string;
-  status: PharmacyStatus;
-  dateApplied: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  phone?: string;
+  openingHours?: string;
+  externalUrl?: string;
+  externalKey?: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface CreatePharmacyBody {
   name: string;
-  registrationNumber: string;
-  location: string;
-  contactEmail: string;
-  phone: string;
-  licenseExpiry: string;
-  dateApplied: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  phone?: string;
+  openingHours?: string;
+  externalUrl?: string;
+  externalKey?: string;
 }
-
-export type UpdatePharmacyStatusBodyStatus =
-  (typeof UpdatePharmacyStatusBodyStatus)[keyof typeof UpdatePharmacyStatusBodyStatus];
-
-export const UpdatePharmacyStatusBodyStatus = {
-  approved: "approved",
-  rejected: "rejected",
-} as const;
 
 export interface UpdatePharmacyStatusBody {
-  status: UpdatePharmacyStatusBodyStatus;
+  status: string;
 }
-
-export type PatientStatus = (typeof PatientStatus)[keyof typeof PatientStatus];
-
-export const PatientStatus = {
-  active: "active",
-  inactive: "inactive",
-} as const;
-
-export interface Patient {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  dateOfBirth: string;
-  address: string;
-  prescriptionCount: number;
-  lastVisit: string;
-  status: PatientStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreatePatientBody {
-  name: string;
-  email: string;
-  phone: string;
-  dateOfBirth: string;
-  address: string;
-  lastVisit: string;
-}
-
-export type UpdatePatientBodyStatus =
-  (typeof UpdatePatientBodyStatus)[keyof typeof UpdatePatientBodyStatus];
-
-export const UpdatePatientBodyStatus = {
-  active: "active",
-  inactive: "inactive",
-} as const;
-
-export interface UpdatePatientBody {
-  name?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  status?: UpdatePatientBodyStatus;
-  lastVisit?: string;
-}
-
-export type OcrLogStatus = (typeof OcrLogStatus)[keyof typeof OcrLogStatus];
-
-export const OcrLogStatus = {
-  success: "success",
-  manual_fallback: "manual_fallback",
-  failed: "failed",
-} as const;
 
 export interface OcrLog {
-  id: number;
-  prescriptionId: string;
-  medicationName: string;
-  pharmacyName: string;
-  patientName: string;
-  status: OcrLogStatus;
-  confidence: number;
-  /** @nullable */
-  errorReason: string | null;
-  scannedAt: string;
+  id: string;
+  userId?: string;
+  status: string;
+  processingTimeMs?: number;
   createdAt: string;
 }
-
-export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
-
-export const OrderStatus = {
-  processing: "processing",
-  shipped: "shipped",
-  delivered: "delivered",
-  cancelled: "cancelled",
-} as const;
 
 export interface Order {
-  id: number;
-  orderId: string;
-  patientName: string;
-  pharmacyName: string;
-  medications: string;
-  status: OrderStatus;
-  total: number;
+  id: string;
+  userId: string;
+  pharmacyId: string;
+  deliveryAddressId?: string;
+  status?: string;
+  totalPrice?: number;
+  prescriptionUrl?: string;
   createdAt: string;
-  updatedAt: string;
 }
 
-export type UpdateOrderStatusBodyStatus =
-  (typeof UpdateOrderStatusBodyStatus)[keyof typeof UpdateOrderStatusBodyStatus];
-
-export const UpdateOrderStatusBodyStatus = {
-  processing: "processing",
-  shipped: "shipped",
-  delivered: "delivered",
-  cancelled: "cancelled",
-} as const;
-
 export interface UpdateOrderStatusBody {
-  status: UpdateOrderStatusBodyStatus;
+  status: string;
 }
 
 export interface Settings {
-  id: number;
+  id: string;
   platformName: string;
   supportEmail: string;
   ocrConfidenceThreshold: number;
@@ -179,57 +81,15 @@ export interface UpdateSettingsBody {
 }
 
 export type ListPharmaciesParams = {
-  status?: ListPharmaciesStatus;
   search?: string;
 };
-
-export type ListPharmaciesStatus =
-  (typeof ListPharmaciesStatus)[keyof typeof ListPharmaciesStatus];
-
-export const ListPharmaciesStatus = {
-  pending: "pending",
-  approved: "approved",
-  rejected: "rejected",
-} as const;
-
-export type ListPatientsParams = {
-  status?: ListPatientsStatus;
-  search?: string;
-};
-
-export type ListPatientsStatus =
-  (typeof ListPatientsStatus)[keyof typeof ListPatientsStatus];
-
-export const ListPatientsStatus = {
-  active: "active",
-  inactive: "inactive",
-} as const;
 
 export type ListOcrLogsParams = {
-  status?: ListOcrLogsStatus;
+  status?: string;
   search?: string;
 };
-
-export type ListOcrLogsStatus =
-  (typeof ListOcrLogsStatus)[keyof typeof ListOcrLogsStatus];
-
-export const ListOcrLogsStatus = {
-  success: "success",
-  manual_fallback: "manual_fallback",
-  failed: "failed",
-} as const;
 
 export type ListOrdersParams = {
-  status?: ListOrdersStatus;
+  status?: string;
   search?: string;
 };
-
-export type ListOrdersStatus =
-  (typeof ListOrdersStatus)[keyof typeof ListOrdersStatus];
-
-export const ListOrdersStatus = {
-  processing: "processing",
-  shipped: "shipped",
-  delivered: "delivered",
-  cancelled: "cancelled",
-} as const;

@@ -8,10 +8,11 @@
 
 export interface CreatePharmacyBody {
   name: string;
-  registrationNumber: string;
-  location: string;
-  contactEmail: string;
-  phone: string;
-  licenseExpiry: string;
-  dateApplied: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  phone?: string;
+  openingHours?: string;
+  externalUrl?: string;
+  externalKey?: string;
 }

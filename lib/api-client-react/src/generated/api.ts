@@ -17,21 +17,16 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
-  CreatePatientBody,
   CreatePharmacyBody,
   HealthStatus,
   ListOcrLogsParams,
   ListOrdersParams,
-  ListPatientsParams,
   ListPharmaciesParams,
   OcrLog,
   Order,
-  Patient,
   Pharmacy,
   Settings,
   UpdateOrderStatusBody,
-  UpdatePatientBody,
-  UpdatePharmacyStatusBody,
   UpdateSettingsBody,
 } from "./api.schemas";
 
@@ -303,12 +298,12 @@ export const useCreatePharmacy = <
 /**
  * @summary Get a pharmacy by ID
  */
-export const getGetPharmacyUrl = (id: number) => {
+export const getGetPharmacyUrl = (id: string) => {
   return `/api/pharmacies/${id}`;
 };
 
 export const getPharmacy = async (
-  id: number,
+  id: string,
   options?: RequestInit,
 ): Promise<Pharmacy> => {
   return customFetch<Pharmacy>(getGetPharmacyUrl(id), {
@@ -317,7 +312,7 @@ export const getPharmacy = async (
   });
 };
 
-export const getGetPharmacyQueryKey = (id: number) => {
+export const getGetPharmacyQueryKey = (id: string) => {
   return [`/api/pharmacies/${id}`] as const;
 };
 
@@ -325,7 +320,7 @@ export const getGetPharmacyQueryOptions = <
   TData = Awaited<ReturnType<typeof getPharmacy>>,
   TError = ErrorType<void>,
 >(
-  id: number,
+  id: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getPharmacy>>,
@@ -368,7 +363,7 @@ export function useGetPharmacy<
   TData = Awaited<ReturnType<typeof getPharmacy>>,
   TError = ErrorType<void>,
 >(
-  id: number,
+  id: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getPharmacy>>,
@@ -386,448 +381,6 @@ export function useGetPharmacy<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
-
-/**
- * @summary Update pharmacy status (approve or reject)
- */
-export const getUpdatePharmacyStatusUrl = (id: number) => {
-  return `/api/pharmacies/${id}/status`;
-};
-
-export const updatePharmacyStatus = async (
-  id: number,
-  updatePharmacyStatusBody: UpdatePharmacyStatusBody,
-  options?: RequestInit,
-): Promise<Pharmacy> => {
-  return customFetch<Pharmacy>(getUpdatePharmacyStatusUrl(id), {
-    ...options,
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(updatePharmacyStatusBody),
-  });
-};
-
-export const getUpdatePharmacyStatusMutationOptions = <
-  TError = ErrorType<void>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updatePharmacyStatus>>,
-    TError,
-    { id: number; data: BodyType<UpdatePharmacyStatusBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof updatePharmacyStatus>>,
-  TError,
-  { id: number; data: BodyType<UpdatePharmacyStatusBody> },
-  TContext
-> => {
-  const mutationKey = ["updatePharmacyStatus"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updatePharmacyStatus>>,
-    { id: number; data: BodyType<UpdatePharmacyStatusBody> }
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return updatePharmacyStatus(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type UpdatePharmacyStatusMutationResult = NonNullable<
-  Awaited<ReturnType<typeof updatePharmacyStatus>>
->;
-export type UpdatePharmacyStatusMutationBody =
-  BodyType<UpdatePharmacyStatusBody>;
-export type UpdatePharmacyStatusMutationError = ErrorType<void>;
-
-/**
- * @summary Update pharmacy status (approve or reject)
- */
-export const useUpdatePharmacyStatus = <
-  TError = ErrorType<void>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updatePharmacyStatus>>,
-    TError,
-    { id: number; data: BodyType<UpdatePharmacyStatusBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof updatePharmacyStatus>>,
-  TError,
-  { id: number; data: BodyType<UpdatePharmacyStatusBody> },
-  TContext
-> => {
-  return useMutation(getUpdatePharmacyStatusMutationOptions(options));
-};
-
-/**
- * @summary List all patients
- */
-export const getListPatientsUrl = (params?: ListPatientsParams) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/patients?${stringifiedParams}`
-    : `/api/patients`;
-};
-
-export const listPatients = async (
-  params?: ListPatientsParams,
-  options?: RequestInit,
-): Promise<Patient[]> => {
-  return customFetch<Patient[]>(getListPatientsUrl(params), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getListPatientsQueryKey = (params?: ListPatientsParams) => {
-  return [`/api/patients`, ...(params ? [params] : [])] as const;
-};
-
-export const getListPatientsQueryOptions = <
-  TData = Awaited<ReturnType<typeof listPatients>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ListPatientsParams,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof listPatients>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getListPatientsQueryKey(params);
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listPatients>>> = ({
-    signal,
-  }) => listPatients(params, { signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof listPatients>>,
-    TError,
-    TData
-  > & { queryKey: QueryKey };
-};
-
-export type ListPatientsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listPatients>>
->;
-export type ListPatientsQueryError = ErrorType<unknown>;
-
-/**
- * @summary List all patients
- */
-
-export function useListPatients<
-  TData = Awaited<ReturnType<typeof listPatients>>,
-  TError = ErrorType<unknown>,
->(
-  params?: ListPatientsParams,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof listPatients>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListPatientsQueryOptions(params, options);
-
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
-    queryKey: QueryKey;
-  };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-/**
- * @summary Create a patient
- */
-export const getCreatePatientUrl = () => {
-  return `/api/patients`;
-};
-
-export const createPatient = async (
-  createPatientBody: CreatePatientBody,
-  options?: RequestInit,
-): Promise<Patient> => {
-  return customFetch<Patient>(getCreatePatientUrl(), {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createPatientBody),
-  });
-};
-
-export const getCreatePatientMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createPatient>>,
-    TError,
-    { data: BodyType<CreatePatientBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof createPatient>>,
-  TError,
-  { data: BodyType<CreatePatientBody> },
-  TContext
-> => {
-  const mutationKey = ["createPatient"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createPatient>>,
-    { data: BodyType<CreatePatientBody> }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return createPatient(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type CreatePatientMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createPatient>>
->;
-export type CreatePatientMutationBody = BodyType<CreatePatientBody>;
-export type CreatePatientMutationError = ErrorType<unknown>;
-
-/**
- * @summary Create a patient
- */
-export const useCreatePatient = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createPatient>>,
-    TError,
-    { data: BodyType<CreatePatientBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof createPatient>>,
-  TError,
-  { data: BodyType<CreatePatientBody> },
-  TContext
-> => {
-  return useMutation(getCreatePatientMutationOptions(options));
-};
-
-/**
- * @summary Get a patient by ID
- */
-export const getGetPatientUrl = (id: number) => {
-  return `/api/patients/${id}`;
-};
-
-export const getPatient = async (
-  id: number,
-  options?: RequestInit,
-): Promise<Patient> => {
-  return customFetch<Patient>(getGetPatientUrl(id), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getGetPatientQueryKey = (id: number) => {
-  return [`/api/patients/${id}`] as const;
-};
-
-export const getGetPatientQueryOptions = <
-  TData = Awaited<ReturnType<typeof getPatient>>,
-  TError = ErrorType<void>,
->(
-  id: number,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getPatient>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getGetPatientQueryKey(id);
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPatient>>> = ({
-    signal,
-  }) => getPatient(id, { signal, ...requestOptions });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!id,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof getPatient>>,
-    TError,
-    TData
-  > & { queryKey: QueryKey };
-};
-
-export type GetPatientQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getPatient>>
->;
-export type GetPatientQueryError = ErrorType<void>;
-
-/**
- * @summary Get a patient by ID
- */
-
-export function useGetPatient<
-  TData = Awaited<ReturnType<typeof getPatient>>,
-  TError = ErrorType<void>,
->(
-  id: number,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getPatient>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetPatientQueryOptions(id, options);
-
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
-    queryKey: QueryKey;
-  };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-/**
- * @summary Update a patient
- */
-export const getUpdatePatientUrl = (id: number) => {
-  return `/api/patients/${id}`;
-};
-
-export const updatePatient = async (
-  id: number,
-  updatePatientBody: UpdatePatientBody,
-  options?: RequestInit,
-): Promise<Patient> => {
-  return customFetch<Patient>(getUpdatePatientUrl(id), {
-    ...options,
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(updatePatientBody),
-  });
-};
-
-export const getUpdatePatientMutationOptions = <
-  TError = ErrorType<void>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updatePatient>>,
-    TError,
-    { id: number; data: BodyType<UpdatePatientBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof updatePatient>>,
-  TError,
-  { id: number; data: BodyType<UpdatePatientBody> },
-  TContext
-> => {
-  const mutationKey = ["updatePatient"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updatePatient>>,
-    { id: number; data: BodyType<UpdatePatientBody> }
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return updatePatient(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type UpdatePatientMutationResult = NonNullable<
-  Awaited<ReturnType<typeof updatePatient>>
->;
-export type UpdatePatientMutationBody = BodyType<UpdatePatientBody>;
-export type UpdatePatientMutationError = ErrorType<void>;
-
-/**
- * @summary Update a patient
- */
-export const useUpdatePatient = <
-  TError = ErrorType<void>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updatePatient>>,
-    TError,
-    { id: number; data: BodyType<UpdatePatientBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof updatePatient>>,
-  TError,
-  { id: number; data: BodyType<UpdatePatientBody> },
-  TContext
-> => {
-  return useMutation(getUpdatePatientMutationOptions(options));
-};
 
 /**
  * @summary List AI/OCR scan logs
@@ -1020,12 +573,12 @@ export function useListOrders<
 /**
  * @summary Update order status
  */
-export const getUpdateOrderStatusUrl = (id: number) => {
+export const getUpdateOrderStatusUrl = (id: string) => {
   return `/api/orders/${id}/status`;
 };
 
 export const updateOrderStatus = async (
-  id: number,
+  id: string,
   updateOrderStatusBody: UpdateOrderStatusBody,
   options?: RequestInit,
 ): Promise<Order> => {
@@ -1044,14 +597,14 @@ export const getUpdateOrderStatusMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateOrderStatus>>,
     TError,
-    { id: number; data: BodyType<UpdateOrderStatusBody> },
+    { id: string; data: BodyType<UpdateOrderStatusBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updateOrderStatus>>,
   TError,
-  { id: number; data: BodyType<UpdateOrderStatusBody> },
+  { id: string; data: BodyType<UpdateOrderStatusBody> },
   TContext
 > => {
   const mutationKey = ["updateOrderStatus"];
@@ -1065,7 +618,7 @@ export const getUpdateOrderStatusMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updateOrderStatus>>,
-    { id: number; data: BodyType<UpdateOrderStatusBody> }
+    { id: string; data: BodyType<UpdateOrderStatusBody> }
   > = (props) => {
     const { id, data } = props ?? {};
 
@@ -1091,14 +644,14 @@ export const useUpdateOrderStatus = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateOrderStatus>>,
     TError,
-    { id: number; data: BodyType<UpdateOrderStatusBody> },
+    { id: string; data: BodyType<UpdateOrderStatusBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof updateOrderStatus>>,
   TError,
-  { id: number; data: BodyType<UpdateOrderStatusBody> },
+  { id: string; data: BodyType<UpdateOrderStatusBody> },
   TContext
 > => {
   return useMutation(getUpdateOrderStatusMutationOptions(options));

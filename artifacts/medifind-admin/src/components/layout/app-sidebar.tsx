@@ -27,7 +27,6 @@ import { customFetch } from "../../../../../lib/api-client-react/src/custom-fetc
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Pharmacies", url: "/pharmacies", icon: Store },
-  { title: "Patients", url: "/patients", icon: Users },
   { title: "AI/OCR Logs", url: "/logs", icon: FileScan },
   { title: "Orders", url: "/orders", icon: ShoppingCart },
   { title: "Settings", url: "/settings", icon: Settings },
