@@ -5,26 +5,21 @@ import router from "./routes";
 
 const app: Express = express();
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "https://buddhimasanthush.github.io"
-];
+/**
+ * Bug 4 Fix: CORS configuration explicitly whitelisting GitHub Pages origin
+ * with credentials support and mandatory methods.
+ */
+app.use(
+  cors({
+    origin: "https://buddhimasanthush.github.io",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+    exposedHeaders: ["Set-Cookie"],
+  })
+);
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.startsWith("http://localhost")) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
-}));
+// Note: cors() middleware already handles preflight (OPTIONS) requests globally.
 
 app.use(cookieParser());
 app.use(express.json());
@@ -32,7 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
 
-app.get("/health", (req, res) => {
+app.get("/healthpre", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 

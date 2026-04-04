@@ -21,7 +21,7 @@ app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 
   // Test DB connection on startup
-  db.execute(sql`SELECT 1`)
+  (db as any).execute(sql`SELECT 1`)
     .then(() => console.log('✅ Database connected successfully'))
     .catch((err: any) => console.error('❌ Database connection failed:', err.message));
 });

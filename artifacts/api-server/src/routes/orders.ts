@@ -12,59 +12,75 @@ import { serializeDates, serializeDatesArray } from "../lib/serialize.js";
 const router: IRouter = Router();
 
 router.get("/orders", async (req, res): Promise<void> => {
-  const query = ListOrdersQueryParams.safeParse(req.query);
-  if (!query.success) {
-    res.status(400).json({ error: query.error.message });
-    return;
+  try {
+    const query = ListOrdersQueryParams.safeParse(req.query);
+    if (!query.success) {
+      res.status(400).json({ error: query.error.message });
+      return;
+    }
+
+    let rows = db.select().from(ordersTable).$dynamic();
+
+    if (query.data.status) {
+      rows = rows.where(eq(ordersTable.status, query.data.status));
+    }
+
+    if (query.data.search) {
+      const term = `%${query.data.search}%`;
+      rows = rows.where(
+        or(
+          ilike(ordersTable.patientName, term),
+          ilike(ordersTable.pharmacyName, term),
+          ilike(ordersTable.orderId, term),
+          ilike(ordersTable.medications, term)
+        )
+      );
+    }
+
+    const results = await rows.orderBy(ordersTable.createdAt);
+    res.json(ListOrdersResponse.parse(serializeDatesArray(results)));
+  } catch (error: any) {
+    console.error("[orders] Route error:", req.method, req.path, error?.message);
+    res.status(500).json({
+      error: error?.message || "Internal server error",
+      detail: process.env.NODE_ENV !== "production" ? error?.stack : undefined,
+    });
   }
-
-  let rows = db.select().from(ordersTable).$dynamic();
-
-  if (query.data.status) {
-    rows = rows.where(eq(ordersTable.status, query.data.status));
-  }
-
-  if (query.data.search) {
-    const term = `%${query.data.search}%`;
-    rows = rows.where(
-      or(
-        ilike(ordersTable.patientName, term),
-        ilike(ordersTable.pharmacyName, term),
-        ilike(ordersTable.orderId, term),
-        ilike(ordersTable.medications, term)
-      )
-    );
-  }
-
-  const results = await rows.orderBy(ordersTable.createdAt);
-  res.json(ListOrdersResponse.parse(serializeDatesArray(results)));
 });
 
 router.patch("/orders/:id/status", async (req, res): Promise<void> => {
-  const params = UpdateOrderStatusParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
+  try {
+    const params = UpdateOrderStatusParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+
+    const parsed = UpdateOrderStatusBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+
+    const [order] = await db
+      .update(ordersTable)
+      .set({ status: parsed.data.status })
+      .where(eq(ordersTable.id, params.data.id))
+      .returning();
+
+    if (!order) {
+      res.status(404).json({ error: "Order not found" });
+      return;
+    }
+
+    res.json(UpdateOrderStatusResponse.parse(serializeDates(order)));
+  } catch (error: any) {
+    console.error("[orders] Route error:", req.method, req.path, error?.message);
+    res.status(500).json({
+      error: error?.message || "Internal server error",
+      detail: process.env.NODE_ENV !== "production" ? error?.stack : undefined,
+    });
   }
-
-  const parsed = UpdateOrderStatusBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-
-  const [order] = await db
-    .update(ordersTable)
-    .set({ status: parsed.data.status })
-    .where(eq(ordersTable.id, params.data.id))
-    .returning();
-
-  if (!order) {
-    res.status(404).json({ error: "Order not found" });
-    return;
-  }
-
-  res.json(UpdateOrderStatusResponse.parse(serializeDates(order)));
 });
 
 export default router;

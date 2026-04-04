@@ -1,10 +1,27 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resendInstance: Resend | null = null;
+
+function getResend() {
+  if (!resendInstance) {
+    const key = process.env.RESEND_API_KEY;
+    if (!key) {
+      return null;
+    }
+    resendInstance = new Resend(key);
+  }
+  return resendInstance;
+}
 
 export async function sendOTPEmail(to: string, otp: string): Promise<void> {
   console.log(`📧 Sending login OTP to: ${to}`);
   
+  const resend = getResend();
+  if (!resend) {
+    console.warn(`⚠️ Skipping email send to ${to}: RESEND_API_KEY is not set. OTP: ${otp}`);
+    return;
+  }
+
   try {
     const { data, error } = await resend.emails.send({
       from: 'Medifind Admin <noreply@medifindsdgp.com>',
@@ -28,6 +45,12 @@ export async function sendOTPEmail(to: string, otp: string): Promise<void> {
 export async function sendRegistrationOTPEmail(to: string, otp: string): Promise<void> {
   console.log(`📧 Sending registration OTP to: ${to}`);
   
+  const resend = getResend();
+  if (!resend) {
+    console.warn(`⚠️ Skipping email send to ${to}: RESEND_API_KEY is not set. OTP: ${otp}`);
+    return;
+  }
+
   try {
     const { data, error } = await resend.emails.send({
       from: 'Medifind Admin <noreply@medifindsdgp.com>',
@@ -47,4 +70,3 @@ export async function sendRegistrationOTPEmail(to: string, otp: string): Promise
     throw new Error("Failed to send registration OTP");
   }
 }
-

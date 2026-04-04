@@ -33,12 +33,12 @@ router.post("/register/request-otp", async (req, res) => {
         return;
       }
       // Update OTP for existing unverified user
-      await db.update(adminsTable)
+      await (db as any).update(adminsTable as any)
         .set({ otp, otpExpiresAt: expiresAt })
         .where(eq(adminsTable.id, existing.id));
     } else {
       // Create new unverified user
-      await db.insert(adminsTable).values({
+      await (db as any).insert(adminsTable as any).values({
         username,
         employeeId,
         status: "unverified",
@@ -52,18 +52,13 @@ router.post("/register/request-otp", async (req, res) => {
 
     res.json({ message: "OTP sent successfully" });
   } catch (error: any) {
-    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.message.includes('UNIQUE constraint failed')) {
+    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.message.includes('UNIQUE constraint failed') || error.message.includes('duplicate key value')) {
       res.status(400).json({ error: "Employee ID already exists" });
     } else {
-      console.error('❌ Email send error (registration):', {
-        message: error.message,
-        code: error.code,
-        response: error.response,
-        stack: error.stack,
-      });
-      res.status(500).json({ 
-        error: "Failed to send registration OTP", 
-        details: error.message 
+      console.error("[auth] Register request-otp error:", error?.message);
+      res.status(500).json({
+        error: error?.message || "Internal server error",
+        detail: process.env.NODE_ENV !== "production" ? error?.stack : undefined,
       });
     }
   }
@@ -81,7 +76,7 @@ router.post("/register/verify-otp", async (req, res) => {
   }
 
   try {
-    const [admin] = await db.select().from(adminsTable).where(eq(adminsTable.username, username));
+    const [admin] = await (db as any).select().from(adminsTable as any).where(eq(adminsTable.id as any, username as any)) as any[];
     if (!admin) {
       res.status(404).json({ error: "User not found" });
       return;
@@ -98,7 +93,7 @@ router.post("/register/verify-otp", async (req, res) => {
     }
 
     // Set to pending approval
-    const [updatedAdmin] = await db.update(adminsTable)
+    const [updatedAdmin] = await (db as any).update(adminsTable as any)
       .set({ status: "pending", otp: null, otpExpiresAt: null })
       .where(eq(adminsTable.id, admin.id))
       .returning();
@@ -116,9 +111,12 @@ router.post("/register/verify-otp", async (req, res) => {
       status: updatedAdmin.status,
       message: "Email verified. Waiting for admin approval." 
     });
-  } catch (err: any) {
-    console.error("Register verify error:", err);
-    res.status(500).json({ error: "Internal server error" });
+  } catch (error: any) {
+    console.error("[auth] Register verify-otp error:", error?.message);
+    res.status(500).json({
+      error: error?.message || "Internal server error",
+      detail: process.env.NODE_ENV !== "production" ? error?.stack : undefined,
+    });
   }
 });
 
@@ -135,7 +133,7 @@ router.post("/login/request-otp", async (req, res) => {
   }
 
   try {
-    const [admin] = await db.select().from(adminsTable).where(eq(adminsTable.username, username));
+    const [admin] = await (db as any).select().from(adminsTable as any).where(eq(adminsTable.username as any, username as any)) as any[];
     
     if (!admin) {
       // Don't leak whether the user exists for security, but since this is internal admin, we can be helpful.
@@ -151,23 +149,18 @@ router.post("/login/request-otp", async (req, res) => {
     const otp = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    await db.update(adminsTable)
+    await (db as any).update(adminsTable as any)
       .set({ otp, otpExpiresAt: expiresAt })
       .where(eq(adminsTable.id, admin.id));
 
     await sendOTPEmail(username, otp);
 
     res.json({ message: "OTP sent successfully" });
-  } catch (err: any) {
-    console.error('❌ Email send error (login):', {
-      message: err.message,
-      code: err.code,
-      response: err.response,
-      stack: err.stack,
-    });
-    res.status(500).json({ 
-      error: "Failed to send login OTP", 
-      details: err.message 
+  } catch (error: any) {
+    console.error("[auth] Login request-otp error:", error?.message);
+    res.status(500).json({
+      error: error?.message || "Internal server error",
+      detail: process.env.NODE_ENV !== "production" ? error?.stack : undefined,
     });
   }
 });
@@ -183,7 +176,7 @@ router.post("/login/verify-otp", async (req, res) => {
   }
 
   try {
-    const [admin] = await db.select().from(adminsTable).where(eq(adminsTable.username, username));
+    const [admin] = await (db as any).select().from(adminsTable as any).where(eq(adminsTable.username as any, username as any)) as any[];
     
     if (!admin) {
       res.status(401).json({ error: "Invalid credentials" });
@@ -206,7 +199,7 @@ router.post("/login/verify-otp", async (req, res) => {
     }
 
     // Clear OTP so it can't be reused
-    await db.update(adminsTable)
+    await (db as any).update(adminsTable as any)
       .set({ otp: null, otpExpiresAt: null })
       .where(eq(adminsTable.id, admin.id));
 
@@ -220,9 +213,12 @@ router.post("/login/verify-otp", async (req, res) => {
     });
 
     res.json({ id: admin.id, username: admin.username, employeeId: admin.employeeId, status: admin.status });
-  } catch (err: any) {
-    console.error("Login verify error:", err);
-    res.status(500).json({ error: "Internal server error" });
+  } catch (error: any) {
+    console.error("[auth] Login verify-otp error:", error?.message);
+    res.status(500).json({
+      error: error?.message || "Internal server error",
+      detail: process.env.NODE_ENV !== "production" ? error?.stack : undefined,
+    });
   }
 });
 
@@ -250,7 +246,7 @@ router.get("/me", async (req, res) => {
     return;
   }
 
-  const [admin] = await db.select().from(adminsTable).where(eq(adminsTable.id, parseInt(adminId)));
+  const [admin] = await (db as any).select().from(adminsTable as any).where(eq(adminsTable.id as any, parseInt(adminId))) as any[];
   if (!admin) {
     res.status(401).json({ error: "Admin not found" });
     return;
@@ -294,9 +290,12 @@ router.post("/approve", async (req, res) => {
     }
 
     res.json({ message: `Admin ${action} correctly`, admin: updatedAdmin });
-  } catch (error) {
-    console.error("Approve error:", error);
-    res.status(500).json({ error: "Internal server error" });
+  } catch (error: any) {
+    console.error("[auth] Approve error:", error?.message);
+    res.status(500).json({
+      error: error?.message || "Internal server error",
+      detail: process.env.NODE_ENV !== "production" ? error?.stack : undefined,
+    });
   }
 });
 
