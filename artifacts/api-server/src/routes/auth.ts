@@ -10,6 +10,19 @@ function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+function hasValidAdminId(id: unknown): id is string | number {
+  if (typeof id === "number") {
+    return Number.isFinite(id);
+  }
+
+  if (typeof id === "string") {
+    const normalized = id.trim();
+    return normalized.length > 0 && normalized.toLowerCase() !== "nan";
+  }
+
+  return false;
+}
+
 /**
  * --- REGISTER FLOW ---
  * Step 1: Request OTP for new account
@@ -35,7 +48,7 @@ router.post("/register/request-otp", async (req, res) => {
       // Update OTP for existing unverified user
       await (db as any).update(adminsTable as any)
         .set({ otp, otpExpiresAt: expiresAt })
-        .where(eq(adminsTable.id, existing.id));
+        .where(eq(adminsTable.username as any, username as any));
     } else {
       // Create new unverified user
       await (db as any).insert(adminsTable as any).values({
@@ -76,7 +89,7 @@ router.post("/register/verify-otp", async (req, res) => {
   }
 
   try {
-    const [admin] = await (db as any).select().from(adminsTable as any).where(eq(adminsTable.id as any, username as any)) as any[];
+    const [admin] = await (db as any).select().from(adminsTable as any).where(eq(adminsTable.username as any, username as any)) as any[];
     if (!admin) {
       res.status(404).json({ error: "User not found" });
       return;
@@ -95,7 +108,7 @@ router.post("/register/verify-otp", async (req, res) => {
     // Set to pending approval
     const [updatedAdmin] = await (db as any).update(adminsTable as any)
       .set({ status: "pending", otp: null, otpExpiresAt: null })
-      .where(eq(adminsTable.id, admin.id))
+      .where(eq(adminsTable.username as any, username as any))
       .returning();
 
     // Create notification for other admins
@@ -151,7 +164,7 @@ router.post("/login/request-otp", async (req, res) => {
 
     await (db as any).update(adminsTable as any)
       .set({ otp, otpExpiresAt: expiresAt })
-      .where(eq(adminsTable.id, admin.id));
+      .where(eq(adminsTable.username as any, username as any));
 
     await sendOTPEmail(username, otp);
 
@@ -201,16 +214,30 @@ router.post("/login/verify-otp", async (req, res) => {
     // Clear OTP so it can't be reused
     await (db as any).update(adminsTable as any)
       .set({ otp: null, otpExpiresAt: null })
-      .where(eq(adminsTable.id, admin.id));
+      .where(eq(adminsTable.username as any, username as any));
 
     const isProduction = process.env.NODE_ENV === "production";
-    res.cookie("admin_id", admin.id.toString(), { 
-      httpOnly: true, 
+    const cookieOptions = {
+      httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
       maxAge: 3600000, // 1 hour
       path: "/",
-    });
+    } as const;
+
+    if (hasValidAdminId(admin.id)) {
+      res.cookie("admin_id", String(admin.id), cookieOptions);
+    } else {
+      console.warn("[auth] Invalid admin.id during login. Using username cookie fallback.", admin.id);
+      res.clearCookie("admin_id", {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        path: "/",
+      });
+    }
+
+    res.cookie("admin_username", admin.username, cookieOptions);
 
     res.json({ id: admin.id, username: admin.username, employeeId: admin.employeeId, status: admin.status });
   } catch (error: any) {
@@ -233,6 +260,12 @@ router.post("/logout", (req, res) => {
     sameSite: isProduction ? "none" : "lax",
     path: "/",
   });
+  res.clearCookie("admin_username", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    path: "/",
+  });
 
   console.log("✅ Cookie cleared");
   res.status(200).json({ success: true, message: "Logged out successfully" });
@@ -241,12 +274,22 @@ router.post("/logout", (req, res) => {
 router.get("/me", async (req, res) => {
   console.log("📍 /api/me called, cookies:", req.cookies);
   const adminId = req.cookies?.admin_id;
-  if (!adminId) {
+  const adminUsername = req.cookies?.admin_username;
+  if (!adminId && !adminUsername) {
     res.status(401).json({ error: "Not authenticated" });
     return;
   }
 
-  const [admin] = await (db as any).select().from(adminsTable as any).where(eq(adminsTable.id as any, adminId)) as any[];
+  let admin: any | undefined;
+
+  if (hasValidAdminId(adminId)) {
+    [admin] = await (db as any).select().from(adminsTable as any).where(eq(adminsTable.id as any, adminId as any)) as any[];
+  }
+
+  if (!admin && typeof adminUsername === "string" && adminUsername.trim().length > 0) {
+    [admin] = await (db as any).select().from(adminsTable as any).where(eq(adminsTable.username as any, adminUsername as any)) as any[];
+  }
+
   if (!admin) {
     res.status(401).json({ error: "Admin not found" });
     return;
@@ -256,7 +299,7 @@ router.get("/me", async (req, res) => {
 });
 
 router.post("/approve", async (req, res) => {
-  const currentAdminId = req.cookies?.admin_id;
+  const currentAdminId = req.cookies?.admin_id || req.cookies?.admin_username;
   if (!currentAdminId) {
     res.status(401).json({ error: "Not authenticated" });
     return;

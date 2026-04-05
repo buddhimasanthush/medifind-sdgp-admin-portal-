@@ -9,7 +9,7 @@
         "builder": "NIXPACKS"
       },
       "deploy": {
-        "startCommand": "pnpm --filter @workspace/db push && pnpm --filter @workspace/api-server start",
+        "startCommand": "pnpm --filter @workspace/api-server build && pnpm --filter @workspace/db push && pnpm --filter @workspace/api-server start",
         "restartPolicyType": "ON_FAILURE",
         "healthcheckPath": "/health"
       }

@@ -5,8 +5,8 @@ const router: IRouter = Router();
 
 // Get all notifications
 router.get("/notifications", async (req, res) => {
-  const adminId = req.cookies?.admin_id;
-  if (!adminId) {
+  const adminIdentity = req.cookies?.admin_id || req.cookies?.admin_username;
+  if (!adminIdentity) {
     res.status(401).json({ error: "Not authenticated" });
     return;
   }
@@ -27,8 +27,8 @@ router.get("/notifications", async (req, res) => {
 
 // Mark notification as read
 router.patch("/notifications/:id/read", async (req, res) => {
-  const adminId = req.cookies?.admin_id;
-  if (!adminId) {
+  const adminIdentity = req.cookies?.admin_id || req.cookies?.admin_username;
+  if (!adminIdentity) {
     res.status(401).json({ error: "Not authenticated" });
     return;
   }
