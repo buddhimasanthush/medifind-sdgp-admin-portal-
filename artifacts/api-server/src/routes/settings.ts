@@ -9,23 +9,35 @@ import { serializeDates } from "../lib/serialize.js";
 
 const router: IRouter = Router();
 
+function normalizeSettings(raw: any) {
+  const nowIso = new Date().toISOString();
+
+  return {
+    id: raw?.id != null ? String(raw.id) : "1",
+    platformName: raw?.platformName ?? "Medifind",
+    supportEmail: raw?.supportEmail ?? "support@medifind.com",
+    ocrConfidenceThreshold:
+      typeof raw?.ocrConfidenceThreshold === "number" ? raw.ocrConfidenceThreshold : 90,
+    autoApprovePharmacies:
+      typeof raw?.autoApprovePharmacies === "boolean" ? raw.autoApprovePharmacies : false,
+    maxPrescriptionsPerDay:
+      typeof raw?.maxPrescriptionsPerDay === "number" ? raw.maxPrescriptionsPerDay : 5000,
+    maintenanceMode:
+      typeof raw?.maintenanceMode === "boolean" ? raw.maintenanceMode : false,
+    updatedAt:
+      raw?.updatedAt instanceof Date
+        ? raw.updatedAt.toISOString()
+        : typeof raw?.updatedAt === "string"
+          ? raw.updatedAt
+          : nowIso,
+  };
+}
+
 router.get("/settings", async (req, res): Promise<void> => {
   try {
     const [settings] = await db.select().from(settingsTable).limit(1);
-
-    // If no settings row exists, return safe defaults instead of empty/null
-    if (!settings) {
-      res.json({
-        platformName: "Medifind",
-        supportEmail: "support@medifind.com",
-        ocrConfidenceThreshold: 0.9,
-        autoApprovePharmacies: false,
-        maxPrescriptionsPerDay: 5000,
-      });
-      return;
-    }
-
-    res.json(GetSettingsResponse.parse(serializeDates(settings)));
+    const normalized = normalizeSettings(serializeDates(settings ?? {}));
+    res.json(GetSettingsResponse.parse(normalized));
   } catch (error: any) {
     console.error("[settings] Route error:", req.method, req.path, error?.message);
     res.status(500).json({
@@ -54,7 +66,8 @@ router.put("/settings", async (req, res): Promise<void> => {
         .returning();
     }
 
-    res.json(UpdateSettingsResponse.parse(serializeDates(settings)));
+    const normalized = normalizeSettings(serializeDates(settings ?? {}));
+    res.json(UpdateSettingsResponse.parse(normalized));
   } catch (error: any) {
     console.error("[settings] Route error:", req.method, req.path, error?.message);
     res.status(500).json({
