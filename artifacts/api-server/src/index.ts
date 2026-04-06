@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { db, sql } from "@workspace/db";
 import app from "./app";
 
 const rawPort = process.env["PORT"];
@@ -15,13 +16,25 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-import { db, sql } from "@workspace/db";
+async function probeDatabaseConnection(): Promise<void> {
+  const database = db as any;
+
+  if (typeof database.execute !== "function") {
+    console.warn(
+      "[DB] Skipping startup probe: current database client does not expose execute().",
+    );
+    return;
+  }
+
+  try {
+    await database.execute(sql`SELECT 1`);
+    console.log("Database connected successfully");
+  } catch (err: any) {
+    console.error("Database connection failed:", err?.message ?? err);
+  }
+}
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
-
-  // Test DB connection on startup
-  (db as any).execute(sql`SELECT 1`)
-    .then(() => console.log('✅ Database connected successfully'))
-    .catch((err: any) => console.error('❌ Database connection failed:', err.message));
+  void probeDatabaseConnection();
 });
