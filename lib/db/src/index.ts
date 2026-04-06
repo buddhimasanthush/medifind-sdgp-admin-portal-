@@ -1,6 +1,8 @@
 import * as schema from "./schema/index.js";
 import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
 import { drizzle as drizzleLibsql } from "drizzle-orm/libsql";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import pg from "pg";
 const { Pool } = pg;
 import { createClient } from "@libsql/client";
@@ -14,17 +16,47 @@ const connectionString =
 // Determine if we should connect to PostgreSQL (Supabase) or LibSQL (Turso)
 const isPostgres =
   connectionString.startsWith("postgres") ||
-  connectionString.includes("supabase") ||
-  process.env.NODE_ENV === "production";
+  connectionString.includes("supabase");
 
 // Startup diagnostic logs — visible in Railway Logs tab
 console.log("[DB] isPostgres detected as:", isPostgres);
 
-if (!connectionString && isPostgres) {
-  console.error(
-    "[DB] FATAL: isPostgres is true but no database connection string was found. " +
-    "Set DATABASE_URL or SUPABASE_DB_URL in environment variables."
+if (!connectionString && process.env.NODE_ENV === "production") {
+  console.warn(
+    "[DB] No PostgreSQL connection string detected in production. " +
+    "Falling back to the bundled SQLite database file."
   );
+}
+
+function resolveSqliteUrl(): string {
+  if (process.env.TURSO_DATABASE_URL) {
+    return process.env.TURSO_DATABASE_URL;
+  }
+
+  const configuredPath = process.env.LOCAL_SQLITE_PATH;
+  if (configuredPath) {
+    return configuredPath.startsWith("file:")
+      ? configuredPath
+      : `file:${configuredPath}`;
+  }
+
+  const sharedCandidates = [
+    path.resolve(process.cwd(), "lib/db/sqlite.db"),
+    path.resolve(process.cwd(), "../lib/db/sqlite.db"),
+    path.resolve(process.cwd(), "../../lib/db/sqlite.db"),
+  ];
+  const localCandidates = [
+    path.resolve(process.cwd(), "sqlite.db"),
+    path.resolve(process.cwd(), "../sqlite.db"),
+  ];
+
+  const selectedPath =
+    sharedCandidates.find((candidate) => existsSync(candidate)) ??
+    localCandidates.find((candidate) => existsSync(candidate)) ??
+    localCandidates[0];
+
+  console.log("[DB] Using SQLite database file:", selectedPath);
+  return `file:${selectedPath}`;
 }
 
 // Create the correct database client based on environment
@@ -53,7 +85,7 @@ const internalDb = isPostgres
       console.log("[DB] Initializing LibSQL / Turso connection...");
 
       const client = createClient({
-        url: process.env.TURSO_DATABASE_URL ?? "file:local.db",
+        url: resolveSqliteUrl(),
         authToken: process.env.TURSO_AUTH_TOKEN,
       });
 

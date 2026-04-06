@@ -1,14 +1,16 @@
 import { defineConfig } from "drizzle-kit";
 
-if (!process.env.SUPABASE_DB_URL) {
-  throw new Error("SUPABASE_DB_URL environment variable is required to push to Supabase.");
+const connectionString = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error("SUPABASE_DB_URL or DATABASE_URL is required to push to PostgreSQL.");
 }
 
 export default defineConfig({
   schema: "./src/schema/index.ts",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.SUPABASE_DB_URL,
+    url: connectionString,
     ssl: { rejectUnauthorized: false } as any,
   },
   verbose: true,
